@@ -1,0 +1,128 @@
+{
+  "name": "1. Submit Doctor Verification",
+  "request": {
+    "method": "POST",
+    "header": [],
+    "body": {
+      "mode": "formdata",
+      "formdata": [
+        {
+          "key": "doctorId",
+          "value": "YOUR_DOCTOR_ID_HERE",
+          "type": "text",
+          "description": "Doctor ID from database"
+        },
+        {
+          "key": "fullName",
+          "value": "Dr. John Doe",
+          "type": "text"
+        },
+        {
+          "key": "email",
+          "value": "doctor@example.com",
+          "type": "text"
+        },
+        {
+          "key": "phoneNumber",
+          "value": "+1234567890",
+          "type": "text"
+        },
+        {
+          "key": "medicalSpecialization",
+          "value": "Cardiology",
+          "type": "text"
+        },
+        {
+          "key": "yearsOfExperience",
+          "value": "10",
+          "type": "text"
+        },
+        {
+          "key": "clinicHospitalName",
+          "value": "City Hospital",
+          "type": "text"
+        },
+        {
+          "key": "clinicAddress",
+          "value": "123 Main Street, Downtown",
+          "type": "text"
+        },
+        {
+          "key": "state",
+          "value": "Maharashtra",
+          "type": "text"
+        },
+        {
+          "key": "city",
+          "value": "Mumbai",
+          "type": "text"
+        },
+        {
+          "key": "registrationNumber",
+          "value": "REG123456",
+          "type": "text"
+        },
+        {
+          "key": "councilName",
+          "value": "MCI",
+          "type": "text",
+          "description": "Options: MCI or State Council"
+        },
+        {
+          "key": "issueDate",
+          "value": "2020-01-15",
+          "type": "text",
+          "description": "Format: YYYY-MM-DD"
+        },
+        {
+          "key": "documentType",
+          "value": "Aadhaar Card",
+          "type": "text",
+          "description": "Options: Aadhaar Card, PAN Card, Passport, Driving License"
+        },
+        {
+          "key": "mbbsCertificate",
+          "type": "file",
+          "src": [],
+          "description": "Required: JPG, PNG, SVG, or PDF (max 5MB)"
+        },
+        {
+          "key": "mdMsBdsCertificate",
+          "type": "file",
+          "src": [],
+          "description": "Optional: JPG, PNG, SVG, or PDF (max 5MB)"
+        },
+        {
+          "key": "registrationCertificate",
+          "type": "file",
+          "src": [],
+          "description": "Required: JPG, PNG, SVG, or PDF (max 5MB)"
+        },
+        {
+          "key": "governmentId",
+          "type": "file",
+          "src": [],
+          "description": "Required: JPG, PNG, or PDF (max 5MB)"
+        },
+        {
+          "key": "selfie",
+          "type": "file",
+          "src": [],
+          "description": "Required: JPG or PNG (max 5MB)"
+        }
+      ]
+    },
+    "url": {
+      "raw": "{{base_url}}/doctors/verification/submit",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "doctors",
+        "verification",
+        "submit"
+      ]
+    },
+    "description": "Submit doctor verification documents and information. All files must be under 5MB."
+  }
+}

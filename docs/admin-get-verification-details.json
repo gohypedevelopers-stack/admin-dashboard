@@ -1,0 +1,33 @@
+{
+  "name": "7. Admin: Get Verification Details",
+  "request": {
+    "method": "GET",
+    "header": [
+      {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}",
+        "description": "JWT token from admin sign-in"
+      }
+    ],
+    "url": {
+      "raw": "{{base_url}}/admin/doctors/verification/:verificationId",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "admin",
+        "doctors",
+        "verification",
+        ":verificationId"
+      ],
+      "variable": [
+        {
+          "key": "verificationId",
+          "value": "YOUR_VERIFICATION_ID_HERE",
+          "description": "Verification ID"
+        }
+      ]
+    },
+    "description": "Get full verification details including all file paths (for admin review)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "5. Admin: Reject Verification",
+  "request": {
+    "method": "PUT",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}",
+        "description": "JWT token from admin sign-in"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"rejectionReason\": \"Invalid certificate format\",\n  \"adminNotes\": \"Please resubmit with a clearer copy\"\n}",
+      "options": {
+        "raw": {
+          "language": "json"
+        }
+      }
+    },
+    "url": {
+      "raw": "{{base_url}}/admin/doctors/verification/:verificationId/reject",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "admin",
+        "doctors",
+        "verification",
+        ":verificationId",
+        "reject"
+      ],
+      "variable": [
+        {
+          "key": "verificationId",
+          "value": "YOUR_VERIFICATION_ID_HERE",
+          "description": "Verification ID"
+        }
+      ]
+    },
+    "description": "Reject a doctor verification request with reason"
+  }
+}

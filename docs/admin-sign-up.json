@@ -1,0 +1,32 @@
+{
+  "name": "0. Admin: Sign Up",
+  "request": {
+    "method": "POST",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"userName\": \"Admin User\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123456\"\n}",
+      "options": {
+        "raw": {
+          "language": "json"
+        }
+      }
+    },
+    "url": {
+      "raw": "{{base_url}}/admin/sign-up",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "admin",
+        "sign-up"
+      ]
+    },
+    "description": "Create an admin user account"
+  }
+}

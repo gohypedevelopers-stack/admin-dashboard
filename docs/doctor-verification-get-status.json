@@ -1,0 +1,26 @@
+{
+  "name": "2. Get Verification Status",
+  "request": {
+    "method": "GET",
+    "header": [],
+    "url": {
+      "raw": "{{base_url}}/doctors/verification/:doctorId",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "doctors",
+        "verification",
+        ":doctorId"
+      ],
+      "variable": [
+        {
+          "key": "doctorId",
+          "value": "YOUR_DOCTOR_ID_HERE",
+          "description": "Doctor ID"
+        }
+      ]
+    },
+    "description": "Get verification status for a specific doctor"
+  }
+}

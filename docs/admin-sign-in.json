@@ -1,0 +1,32 @@
+{
+  "name": "0. Admin: Sign In",
+  "request": {
+    "method": "POST",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123456\"\n}",
+      "options": {
+        "raw": {
+          "language": "json"
+        }
+      }
+    },
+    "url": {
+      "raw": "{{base_url}}/auth/sign-in",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "auth",
+        "sign-in"
+      ]
+    },
+    "description": "Sign in as admin to get JWT token. Copy the token from response and use it in Authorization header for admin endpoints."
+  }
+}

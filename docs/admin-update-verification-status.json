@@ -1,0 +1,47 @@
+{
+  "name": "6. Admin: Update Verification Status",
+  "request": {
+    "method": "PUT",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}",
+        "description": "JWT token from admin sign-in"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"status\": \"under_review\",\n  \"adminNotes\": \"Reviewing documents\"\n}",
+      "options": {
+        "raw": {
+          "language": "json"
+        }
+      }
+    },
+    "url": {
+      "raw": "{{base_url}}/admin/doctors/verification/:verificationId/status",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "admin",
+        "doctors",
+        "verification",
+        ":verificationId",
+        "status"
+      ],
+      "variable": [
+        {
+          "key": "verificationId",
+          "value": "YOUR_VERIFICATION_ID_HERE",
+          "description": "Verification ID"
+        }
+      ]
+    },
+    "description": "Update verification status (pending, under_review, approved, rejected)"
+  }
+}
