@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import AdminTable from '../../components/Common/AdminTable';
-import { apiRequest } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
+import { appointmentService } from '../../services/appointmentService';
 
 const COLUMNS = [
   { key: 'id', label: 'ID', type: 'text' },
@@ -28,7 +28,7 @@ const formatSlot = (value) => {
 
 const AppointmentList = () => {
   const { data, loading, error } = useApiData(async () => {
-    const payload = await apiRequest('/api/admin/appointments?limit=25&range=upcoming');
+    const payload = await appointmentService.getAllAppointments();
     return Array.isArray(payload?.data) ? payload.data : [];
   }, []);
 

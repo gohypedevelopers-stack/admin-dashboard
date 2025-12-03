@@ -1,36 +1,66 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { getAdminToken, setAdminToken } from '../utils/api';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const token = getAdminToken();
-    if (!token) return null;
-    return { email: 'admin', role: 'admin' };
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = ({ user: nextUser, token }) => {
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = getAdminToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const profile = await authService.getProfile();
+        setUser(profile.data || profile);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+        setAdminToken('');
+      } finally {
+        setLoading(false);
+      }
+    };
+    initAuth();
+  }, []);
+
+  const login = async (credentials) => {
+    const response = await authService.login(credentials);
+    const { token, user: userData } = response;
     if (token) {
       setAdminToken(token);
+      setUser(userData);
     }
-    setUser(nextUser || null);
+    return response;
   };
 
-  const logout = () => {
-    setAdminToken('');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error('Logout failed', err);
+    } finally {
+      setAdminToken('');
+      setUser(null);
+    }
   };
 
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user && getAdminToken()),
+      isAuthenticated: !!user,
       login,
-      logout
+      logout,
+      loading
     }),
-    [user]
+    [user, loading]
   );
+
+  if (loading) return <div>Loading...</div>;
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

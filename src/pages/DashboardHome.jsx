@@ -82,9 +82,7 @@ const StatCard = ({ title, value, note, trend, icon: Icon, color, onClick }) => 
 const DashboardHome = () => {
   const {
     overview,
-    reports,
     verifications,
-    supportTickets,
     topDoctors: fetchedTopDoctors,
     loading,
     error,
@@ -98,11 +96,11 @@ const DashboardHome = () => {
   const pendingDoctors = overview?.verifications?.pendingDoctors ?? 0;
   const pendingPharmacies = overview?.verifications?.pendingPharmacies ?? 0;
   const totalPending = pendingDoctors + pendingPharmacies;
-  const supportQueueCount = overview?.supportQueue ?? supportTickets.length ?? 0;
+  const supportQueueCount = overview?.supportQueue ?? 0;
 
   const statItems = useMemo(() => {
     const totals = overview?.totals ?? {};
-    const ticketCount = overview?.supportQueue ?? supportTickets.length ?? 0;
+    const ticketCount = overview?.supportQueue ?? 0;
     return [
       {
         title: 'Total Patients',
@@ -142,18 +140,17 @@ const DashboardHome = () => {
     pendingDoctors,
     pendingPharmacies,
     totalPending,
-    supportTickets.length,
     navigate,
   ]);
 
   const trendData = useMemo(() => {
-    const source = reports?.appointmentsTrend?.length ? reports.appointmentsTrend : fallbackTrend;
-    return source.map((item) => ({
+    // Fallback since reports endpoint is removed
+    return fallbackTrend.map((item) => ({
       name: formatTrendLabel(item.date),
       appointments: item.count ?? item.appointments ?? 0,
       value: item.count ?? item.appointments ?? 0,
     }));
-  }, [reports]);
+  }, []);
 
   const sparklineData = trendData.map((item) => ({
     month: item.name,
@@ -184,16 +181,10 @@ const DashboardHome = () => {
     return String(value);
   };
 
-  const regionRevenue = reports?.revenueByRegion || [];
-  const doctorPerformance = reports?.doctorPerformance || [];
+  // Removed reports usage
   const performanceMap = useMemo(() => {
-    const map = new Map();
-    doctorPerformance.forEach((perf) => {
-      if (!perf?._id) return;
-      map.set(perf._id.toString(), perf.appointments ?? 0);
-    });
-    return map;
-  }, [doctorPerformance]);
+    return new Map();
+  }, []);
 
   const topDoctors = useMemo(() => {
     if (!Array.isArray(fetchedTopDoctors)) return [];
@@ -316,30 +307,6 @@ const DashboardHome = () => {
             </table>
           </div>
         </div>
-        <div className="list-card">
-          <div className="list-header">
-            <h3>Support queue</h3>
-            <p>{formatNumber(supportQueueCount)} open tickets</p>
-          </div>
-          <ul className="support-list">
-            {supportTickets.length === 0 && (
-              <li className="empty-row">No open support tickets.</li>
-            )}
-            {supportTickets.map((ticket) => (
-              <li key={ticket._id}>
-                <div>
-                  <p className="support-title">{ticket.subject}</p>
-                  <p className="support-meta">
-                    <MessageSquare size={14} /> {ticket.user?.userName || ticket.user?.email || 'Unknown user'}
-                  </p>
-                </div>
-                <span className={`status-pill status-${ticket.status}`}>
-                  {ticket.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
       </section>
 
       <section className="section-grid">
@@ -361,24 +328,6 @@ const DashboardHome = () => {
                   </p>
                 </div>
                 <strong>{formatNumber(doctor.appointments)}</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="list-card">
-          <div className="list-header">
-            <h3>Revenue by region</h3>
-            <p>Top performing cities</p>
-          </div>
-          <ul className="compact-list">
-            {regionRevenue.length === 0 && <li className="empty-row">No regional revenue data.</li>}
-            {regionRevenue.map((region) => (
-              <li key={region._id}>
-                <div>
-                  <p className="compact-title">{region._id || 'Unknown city'}</p>
-                  <p className="compact-meta">Orders: {formatNumber(region.revenue ? Math.round(region.revenue / 1000) : 0)}K</p>
-                </div>
-                <strong>{formatCurrency(region.revenue)}</strong>
               </li>
             ))}
           </ul>

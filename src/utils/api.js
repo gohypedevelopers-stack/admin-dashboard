@@ -1,9 +1,5 @@
 const inferDefaultBase = () => {
   if (import.meta?.env?.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
-  // Prefer local API while developing if the app is served from localhost
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:3000';
-  }
   return 'https://doorspital-backend.onrender.com';
 };
 

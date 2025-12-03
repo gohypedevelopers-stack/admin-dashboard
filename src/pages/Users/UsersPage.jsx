@@ -1,34 +1,34 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import AdminTable from '../../components/Common/AdminTable';
+import { Search, Filter, MoreVertical, Trash2, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import './users-page.css';
-import { apiRequest, getAdminToken } from '../../utils/api';
-
-const COLUMNS = [
-  { key: 'id', label: 'ID', type: 'text' },
-  { key: 'name', label: 'Name', type: 'text' },
-  { key: 'email', label: 'Email', type: 'email' },
-  { key: 'role', label: 'Role', type: 'text' },
-  { key: 'status', label: 'Status', type: 'text' },
-];
+import { getAdminToken } from '../../utils/api';
+import { userService } from '../../services/userService';
 
 const UsersPage = ({ fixedRole }) => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const pathRole = pathParts[1] ? capitalize(pathParts[1]) : 'All';
-  const roleFilter = fixedRole || pathRole || 'All';
-  const statusFilter = (params.get('status') || 'All').toLowerCase();
+  let pathRole = pathParts[1] ? pathParts[1].toLowerCase() : 'all';
+
+  if (pathRole === 'patient') pathRole = 'user';
+
+  const roleFilter = fixedRole ? fixedRole.toLowerCase() : pathRole;
+  const initialStatusFilter = (params.get('status') || 'all').toLowerCase();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadTrigger, setReloadTrigger] = useState(0);
-  const [selectedUser, setSelectedUser] = useState('');
-  const [roleSelection, setRoleSelection] = useState('user');
-  const [bulkSelection, setBulkSelection] = useState([]);
-  const [actionMessage, setActionMessage] = useState('');
-  const [actionError, setActionError] = useState('');
+
+  // UI States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Action States
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -41,220 +41,260 @@ const UsersPage = ({ fixedRole }) => {
         throw new Error('Admin token missing. Please sign in.');
       }
 
-      const params = new URLSearchParams();
-      if (roleFilter && roleFilter !== 'All') {
-        params.set('role', roleFilter.toLowerCase());
-      }
-      if (statusFilter && statusFilter !== 'all') {
-        params.set('isActive', statusFilter === 'active');
-      }
+      try {
+        const payload = await userService.getAllUsers();
+        let list = Array.isArray(payload?.data) ? payload.data : [];
 
-      const payload = await apiRequest(`/api/admin/users?${params.toString()}`);
-      const list = Array.isArray(payload?.data?.users) ? payload.data.users : Array.isArray(payload?.users) ? payload.users : [];
+        // Filter by Role
+        if (roleFilter && roleFilter !== 'all') {
+          list = list.filter(u => (u.role || 'user').toLowerCase() === roleFilter);
+        }
 
-      const rows = list.map((user) => ({
-        id: user._id || user.id,
-        name: user.userName || '-',
-        email: user.email || '-',
-        role: (user.role || 'user').replace(/^\w/, (c) => c.toUpperCase()),
-        status: user.isActive ? 'Active' : 'Suspended',
-      }));
+        const rows = list.map((user) => ({
+          id: user._id || user.id,
+          name: user.userName || 'Unknown User',
+          email: user.email || '-',
+          role: (user.role || 'user').toLowerCase(),
+          status: user.isActive !== false ? 'Active' : 'Suspended',
+          isActive: user.isActive !== false,
+          avatar: user.avatarUrl,
+          joined: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-',
+        }));
 
-      if (!active) return;
-      setData(rows);
-    };
-
-    fetchUsers()
-      .catch((err) => {
-        if (!active) return;
-        setError(err?.message || 'Failed to load users');
-        setData([]);
-      })
-      .finally(() => {
+        if (active) setData(rows);
+      } catch (err) {
+        if (active) setError(err?.message || 'Failed to load users');
+      } finally {
         if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
+      }
     };
-  }, [roleFilter, statusFilter, reloadTrigger]);
 
-  const tableData = useMemo(() => data, [data]);
+    fetchUsers();
+    return () => { active = false; };
+  }, [roleFilter, reloadTrigger]);
 
-  useEffect(() => {
-    if (!selectedUser && tableData.length) {
-      setSelectedUser(tableData[0].id);
-      setRoleSelection(roleFromRow(tableData[0]));
-    }
-  }, [tableData, selectedUser]);
+  // Filtering & Pagination
+  const filteredData = useMemo(() => {
+    return data.filter(user => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const handleRoleUpdate = async () => {
-    if (!selectedUser) {
-      setActionError('Select a user first');
-      return;
-    }
-    setActionLoading(true);
-    setActionError('');
-    try {
-      await apiRequest(`/api/admin/users/${selectedUser}/role`, {
-        method: 'PUT',
-        body: { role: roleSelection },
-      });
-      setActionMessage('Role updated successfully');
-      setReloadTrigger((prev) => prev + 1);
-    } catch (err) {
-      setActionError(err?.message || 'Unable to update role');
-    } finally {
-      setActionLoading(false);
+      const matchesStatus = statusFilter === 'all'
+        ? true
+        : user.status.toLowerCase() === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedUsers(paginatedData.map(u => u.id));
+    } else {
+      setSelectedUsers([]);
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!selectedUser) {
-      setActionError('Select a user first');
-      return;
-    }
-    setActionLoading(true);
-    setActionError('');
-    try {
-      await apiRequest(`/api/admin/users/${selectedUser}`, {
-        method: 'DELETE',
-      });
-      setActionMessage('User deleted successfully');
-      setBulkSelection((prev) => prev.filter((id) => id !== selectedUser));
-      setSelectedUser('');
-      setReloadTrigger((prev) => prev + 1);
-    } catch (err) {
-      setActionError(err?.message || 'Unable to delete user');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleSelectUser = (id) => {
+    setSelectedUsers(prev =>
+      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
+    );
   };
 
   const handleBulkDelete = async () => {
-    if (!bulkSelection.length) {
-      setActionError('Select at least one user for bulk delete');
-      return;
-    }
+    if (!selectedUsers.length || !window.confirm(`Delete ${selectedUsers.length} users?`)) return;
+
     setActionLoading(true);
-    setActionError('');
     try {
-      await apiRequest('/api/admin/users/bulk-delete', {
-        method: 'POST',
-        body: { userIds: bulkSelection },
-      });
-      setActionMessage('Users deleted successfully');
-      setBulkSelection([]);
-      if (bulkSelection.includes(selectedUser)) {
-        setSelectedUser('');
-      }
-      setReloadTrigger((prev) => prev + 1);
+      await userService.bulkDeleteUsers(selectedUsers);
+      setReloadTrigger(prev => prev + 1);
+      setSelectedUsers([]);
     } catch (err) {
-      setActionError(err?.message || 'Unable to delete users');
+      alert('Failed to delete users');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const userOptions = useMemo(
-    () => tableData.map((row) => ({ id: row.id, label: `${row.name} (${row.email})` })),
-    [tableData]
-  );
+  const handleDeleteSingle = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    setActionLoading(true);
+    try {
+      await userService.deleteUser(id);
+      setReloadTrigger(prev => prev + 1);
+    } catch (err) {
+      alert('Failed to delete user');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-  const handleBulkSelectionChange = (event) => {
-    const selected = Array.from(event.target.selectedOptions, (opt) => opt.value);
-    setBulkSelection(selected);
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   };
 
   return (
     <div className="users-page">
-      {error && <div className="users-error">{error}</div>}
-      {loading ? (
-        <div className="users-loading">Loading users...</div>
-      ) : (
-        <>
-          <AdminTable
-            title="Users Management"
-            columns={COLUMNS}
-            initialData={tableData}
+      <div className="page-header">
+        <h1 className="page-title">
+          {roleFilter === 'all' ? 'All Users' : `${roleFilter.charAt(0).toUpperCase() + roleFilter.slice(1)}s`}
+        </h1>
+        <p className="page-subtitle">Manage your platform users, roles, and account statuses.</p>
+      </div>
+
+      <div className="controls-bar">
+        <div className="search-wrapper">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <div className="user-actions">
-            <h3>Admin actions</h3>
-            {actionMessage && <div className="action-message success">{actionMessage}</div>}
-            {actionError && <div className="action-message error">{actionError}</div>}
-            <div className="action-row">
-              <label htmlFor="user-select">Select user</label>
-              <select
-                id="user-select"
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-              >
-                <option value="">Select user</option>
-                {userOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <label htmlFor="role-select">Set role</label>
-              <select
-                id="role-select"
-                value={roleSelection}
-                onChange={(e) => setRoleSelection(e.target.value)}
-              >
-                {["user", "doctor", "admin", "pharmacy"].map((role) => (
-                  <option key={role} value={role}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <button type="button" onClick={handleRoleUpdate} disabled={actionLoading || !selectedUser}>
-                Update Role
-              </button>
-            </div>
-            <div className="action-row">
-              <button type="button" onClick={handleDeleteUser} disabled={actionLoading || !selectedUser}>
-                Delete User
-              </button>
-            </div>
-            <div className="action-row">
-              <label htmlFor="bulk-select">Bulk delete (hold Ctrl / Cmd to select multiple)</label>
-              <select
-                id="bulk-select"
-                multiple
-                size={4}
-                value={bulkSelection}
-                onChange={handleBulkSelectionChange}
-              >
-                {userOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+        </div>
+
+        <div className="filters-group">
+          <select
+            className="filter-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+      </div>
+
+      {selectedUsers.length > 0 && (
+        <div className="bulk-actions">
+          <span>{selectedUsers.length} users selected</span>
+          <button className="bulk-btn" onClick={handleBulkDelete} disabled={actionLoading}>
+            <Trash2 size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+            Delete Selected
+          </button>
+        </div>
+      )}
+
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-state">Loading users...</div>
+        ) : error ? (
+          <div className="error-state">{error}</div>
+        ) : (
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={paginatedData.length > 0 && selectedUsers.length === paginatedData.length}
+                  />
+                </th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedData.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="empty-state">No users found matching your criteria.</td>
+                </tr>
+              ) : (
+                paginatedData.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => handleSelectUser(user.id)}
+                      />
+                    </td>
+                    <td>
+                      <div className="user-cell">
+                        <div className="user-avatar">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                          ) : (
+                            getInitials(user.name)
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <span className="user-name">{user.name}</span>
+                          <span className="user-email">{user.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ textTransform: 'capitalize' }}>{user.role}</span>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                        {user.status}
+                      </span>
+                    </td>
+                    <td>{user.joined}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="action-btn delete"
+                        title="Delete User"
+                        onClick={() => handleDeleteSingle(user.id)}
+                        disabled={actionLoading}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {!loading && !error && filteredData.length > 0 && (
+          <div className="pagination">
+            <span className="pagination-text">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} users
+            </span>
+            <div className="pagination-controls">
               <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={actionLoading || !bulkSelection.length}
+                className="page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
               >
-                Delete Selected
+                Previous
+              </button>
+              <button
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+              >
+                Next
               </button>
             </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
-};
-
-const capitalize = (str) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-
-const roleFromRow = (row) => {
-  if (!row?.role) return 'user';
-  return row.role.toLowerCase();
 };
 
 export default UsersPage;

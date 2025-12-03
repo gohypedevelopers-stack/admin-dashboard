@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import AdminTable from '../../components/Common/AdminTable';
-import { apiRequest, pickList } from '../../utils/api';
+import { pickList } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
+import { pharmacyService } from '../../services/pharmacyService';
 
 const COLUMNS = [
   { key: 'id', label: 'ID', type: 'text' },
@@ -18,18 +19,18 @@ const formatPrice = (value) => {
 
 const PharmaciesPage = () => {
   const { data, loading, error } = useApiData(async () => {
-    const payload = await apiRequest('/api/pharmacy/products');
+    const payload = await pharmacyService.getAllProducts();
     const list =
       (payload && payload.data && Array.isArray(payload.data.items) && payload.data.items) ||
       pickList(payload);
     return Array.isArray(list)
       ? list.map((item, idx) => ({
-          id: item._id || item.id || idx + 1,
-          name: item.name || '-',
-          category: item.category || '-',
-          price: formatPrice(item.price ?? item.mrp),
-          status: item.status || (item.isPrescriptionRequired ? 'Requires Rx' : 'Active')
-        }))
+        id: item._id || item.id || idx + 1,
+        name: item.name || '-',
+        category: item.category || '-',
+        price: formatPrice(item.price ?? item.mrp),
+        status: item.status || (item.isPrescriptionRequired ? 'Requires Rx' : 'Active')
+      }))
       : [];
   }, []);
 

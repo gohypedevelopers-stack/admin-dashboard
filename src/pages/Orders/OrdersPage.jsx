@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import AdminTable from '../../components/Common/AdminTable';
-import { apiRequest, pickList } from '../../utils/api';
+import { pickList } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
+import { pharmacyService } from '../../services/pharmacyService';
 
 const COLUMNS = [
   { key: 'id', label: 'ID', type: 'text' },
@@ -37,18 +38,18 @@ const OrdersPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const { data, loading, error } = useApiData(async () => {
-    const payload = await apiRequest('/api/pharmacy/orders');
+    const payload = await pharmacyService.getAllOrders();
     const list = pickList(payload);
     return Array.isArray(list)
       ? list.map((item, idx) => ({
-          id: item._id || item.id || idx + 1,
-          orderNo: item.orderNumber || item._id || item.id || `ORD-${idx + 1}`,
-          customer: item.user?.userName || item.shippingAddress?.fullName || '-',
-          total: formatPrice(item.totalAmount ?? item.grandTotal ?? item.total),
-          status: item.status || '-',
-          payment: item.paymentStatus || '-',
-          date: formatDate(item.createdAt || item.updatedAt),
-        }))
+        id: item._id || item.id || idx + 1,
+        orderNo: item.orderNumber || item._id || item.id || `ORD-${idx + 1}`,
+        customer: item.user?.userName || item.shippingAddress?.fullName || '-',
+        total: formatPrice(item.totalAmount ?? item.grandTotal ?? item.total),
+        status: item.status || '-',
+        payment: item.paymentStatus || '-',
+        date: formatDate(item.createdAt || item.updatedAt),
+      }))
       : [];
   }, [refresh]);
 
@@ -64,11 +65,7 @@ const OrdersPage = () => {
     setActionLoading(true);
     clearMessages();
     try {
-      await apiRequest(`/api/pharmacy/orders/${selectedOrder}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: { status: statusValue, paymentStatus: paymentValue },
-      });
+      await pharmacyService.updateOrderStatus(selectedOrder, statusValue);
       setActionMessage('Order updated successfully');
       setRefresh((prev) => prev + 1);
     } catch (err) {

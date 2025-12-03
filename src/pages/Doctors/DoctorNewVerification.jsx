@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
-
+import { CheckCircle, XCircle, AlertCircle, FileText, Calendar, MapPin, User, Phone, Mail, Award } from 'lucide-react';
 import { apiRequest, pickList } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
+import './doctors-page.css';
 
-const ItemRow = ({ label, value }) => (
-  <p style={{ margin: '2px 0', color: '#475569', fontSize: 13 }}>
-    <span style={{ fontWeight: 700, color: '#0f172a' }}>{label}:</span> {value || '-'}
-  </p>
+const ItemRow = ({ icon: Icon, label, value }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+    {Icon && <Icon size={14} className="text-gray-400" />}
+    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+      <span style={{ fontWeight: 600, color: 'var(--text-primary)', marginRight: 4 }}>{label}:</span>
+      {value || '-'}
+    </p>
+  </div>
 );
 
 const formatDate = (value) => {
   if (!value) return '-';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '-' : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString();
 };
 
 const normalizeVerification = (item, idx) => ({
@@ -46,7 +51,7 @@ const DoctorNewVerification = () => {
   const [actionLoading, setActionLoading] = useState('');
   const [actionError, setActionError] = useState('');
   const { data, setData, loading, error } = useApiData(async () => {
-    const payload = await apiRequest('/api/doctors/verification?status=pending');
+    const payload = await apiRequest('/api/admin/verifications?status=pending');
     const list = pickList(payload);
     return list.map(normalizeVerification);
   }, []);
@@ -96,89 +101,108 @@ const DoctorNewVerification = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(2,6,23,0.06)', padding: 16 }}>
-        <h2 style={{ margin: '0 0 12px', color: '#0f172a' }}>New Doctor Verifications</h2>
-        <p style={{ margin: '0 0 12px', color: '#475569' }}>
-          Pending verification submissions pulled from the Doorspital API{loading ? ' (loading...)' : ''}.
-        </p>
+    <div className="doctors-page">
+      <div className="page-header">
+        <h1 className="page-title">New Doctor Verifications</h1>
+        <p className="page-subtitle">Review and manage pending doctor verification requests.</p>
+      </div>
 
-        {error && (
-          <div style={errorBoxStyle}>
-            {error} (showing local fallback data if available)
-          </div>
-        )}
-        {actionError && (
-          <div style={errorBoxStyle}>
-            {actionError}
-          </div>
-        )}
+      {error && <div className="error-state">{error}</div>}
+      {actionError && <div className="error-state" style={{ padding: 12, marginBottom: 16 }}>{actionError}</div>}
 
-        {!loading && !error && items.length === 0 && (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748b' }}>
-            <p style={{ fontSize: 16, fontWeight: 500 }}>No pending verifications found</p>
-            <p style={{ fontSize: 14, marginTop: 4 }}>New verification requests will appear here.</p>
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gap: 12 }}>
+      {loading ? (
+        <div className="loading-state">Loading verifications...</div>
+      ) : items.length === 0 ? (
+        <div className="empty-state">No pending verifications found.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 24 }}>
           {items.map((item) => (
-            <div key={item.id} style={{ padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', display: 'grid', gap: 6 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>{item.fullName}</p>
-                  <p style={{ margin: '2px 0 0', color: '#475569' }}>{item.medicalSpecialization} · Submitted {item.submitted}</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ padding: '4px 10px', borderRadius: 999, background: '#fffbeb', color: '#d97706', fontSize: 12, fontWeight: 700 }}>
-                    {item.status || 'Pending'}
-                  </span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      onClick={() => handleAction(item.id, 'approve')}
-                      disabled={!!actionLoading}
-                      style={actionBtnStyle('#10b981', '#ecfdf3')}
-                    >
-                      {actionLoading === item.id ? '...' : 'Approve'}
-                    </button>
-                    <button
-                      onClick={() => handleAction(item.id, 'reject')}
-                      disabled={!!actionLoading}
-                      style={actionBtnStyle('#ef4444', '#fef2f2')}
-                    >
-                      {actionLoading === item.id ? '...' : 'Reject'}
-                    </button>
-                    <button
-                      onClick={() => handleAction(item.id, 'under_review')}
-                      disabled={!!actionLoading}
-                      style={actionBtnStyle('#3b82f6', '#eff6ff')}
-                    >
-                      {actionLoading === item.id ? '...' : 'Under review'}
-                    </button>
+            <div key={item.id} className="table-container" style={{ padding: 24, overflow: 'visible' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div className="doctor-avatar" style={{ width: 64, height: 64, fontSize: 24 }}>
+                    {item.fullName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{item.fullName}</h3>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>{item.medicalSpecialization} • Submitted {item.submitted}</p>
+                    <div style={{ marginTop: 8 }}>
+                      <span className={`status-badge status-${item.status.toLowerCase()}`}>
+                        {item.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => handleAction(item.id, 'approve')}
+                    disabled={!!actionLoading}
+                    className="action-btn"
+                    style={{ background: 'var(--success-light)', color: '#065f46', border: '1px solid var(--success)', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
+                  >
+                    <CheckCircle size={16} />
+                    {actionLoading === item.id ? '...' : 'Approve'}
+                  </button>
+                  <button
+                    onClick={() => handleAction(item.id, 'reject')}
+                    disabled={!!actionLoading}
+                    className="action-btn"
+                    style={{ background: 'var(--danger-light)', color: '#991b1b', border: '1px solid var(--danger)', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
+                  >
+                    <XCircle size={16} />
+                    {actionLoading === item.id ? '...' : 'Reject'}
+                  </button>
+                  <button
+                    onClick={() => handleAction(item.id, 'under_review')}
+                    disabled={!!actionLoading}
+                    className="action-btn"
+                    style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
+                  >
+                    <AlertCircle size={16} />
+                    {actionLoading === item.id ? '...' : 'Review'}
+                  </button>
+                </div>
               </div>
-              <ItemRow label="Doctor ID" value={item.doctorId} />
-              <ItemRow label="Email" value={item.email} />
-              <ItemRow label="Phone" value={item.phoneNumber} />
-              <ItemRow label="Experience" value={item.yearsOfExperience !== undefined ? `${item.yearsOfExperience} yrs` : '-'} />
-              <ItemRow label="Clinic/Hospital" value={item.clinicHospitalName} />
-              <ItemRow label="Address" value={[item.clinicAddress, item.city, item.state].filter(Boolean).join(', ')} />
-              <ItemRow label="Registration No." value={item.registrationNumber} />
-              <ItemRow label="Council" value={item.councilName} />
-              <ItemRow label="Issue Date" value={item.issueDate} />
-              <ItemRow label="ID Type" value={item.documentType} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                <FileLink label="MBBS Certificate" href={item.files.mbbsCertificate} />
-                <FileLink label="MD/MS/BDS" href={item.files.mdMsBdsCertificate} />
-                <FileLink label="Registration Cert" href={item.files.registrationCertificate} />
-                <FileLink label="Govt ID" href={item.files.governmentId} />
-                <FileLink label="Selfie" href={item.files.selfie} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User size={16} /> Personal Details
+                  </h4>
+                  <ItemRow icon={Mail} label="Email" value={item.email} />
+                  <ItemRow icon={Phone} label="Phone" value={item.phoneNumber} />
+                  <ItemRow icon={MapPin} label="Address" value={[item.clinicAddress, item.city, item.state].filter(Boolean).join(', ')} />
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Award size={16} /> Professional Info
+                  </h4>
+                  <ItemRow icon={Award} label="Experience" value={item.yearsOfExperience !== undefined ? `${item.yearsOfExperience} yrs` : '-'} />
+                  <ItemRow icon={MapPin} label="Clinic" value={item.clinicHospitalName} />
+                  <ItemRow icon={FileText} label="Reg. No" value={item.registrationNumber} />
+                  <ItemRow icon={FileText} label="Council" value={item.councilName} />
+                  <ItemRow icon={Calendar} label="Issue Date" value={item.issueDate} />
+                </div>
+
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FileText size={16} /> Documents
+                  </h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <FileLink label="MBBS Cert" href={item.files.mbbsCertificate} />
+                    <FileLink label="MD/MS/BDS" href={item.files.mdMsBdsCertificate} />
+                    <FileLink label="Reg. Cert" href={item.files.registrationCertificate} />
+                    <FileLink label="Govt ID" href={item.files.governmentId} />
+                    <FileLink label="Selfie" href={item.files.selfie} />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -186,48 +210,41 @@ const DoctorNewVerification = () => {
 const FileLink = ({ label, href }) => {
   if (!href) {
     return (
-      <span style={{ ...linkStyle, color: '#94a3b8', borderStyle: 'dashed' }}>
+      <span style={{
+        padding: '6px 12px',
+        borderRadius: 6,
+        border: '1px dashed var(--border)',
+        background: '#f9fafb',
+        color: 'var(--text-tertiary)',
+        fontSize: 12,
+        fontWeight: 500
+      }}>
         {label}
       </span>
     );
   }
   return (
-    <a style={linkStyle} href={href} target="_blank" rel="noreferrer">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        padding: '6px 12px',
+        borderRadius: 6,
+        border: '1px solid var(--border)',
+        background: '#fff',
+        color: 'var(--primary)',
+        textDecoration: 'none',
+        fontSize: 12,
+        fontWeight: 500,
+        transition: 'all 0.2s'
+      }}
+      onMouseOver={(e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#f5f3ff'; }}
+      onMouseOut={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = '#fff'; }}
+    >
       {label}
     </a>
   );
 };
-
-const linkStyle = {
-  padding: '6px 10px',
-  borderRadius: 6,
-  border: '1px solid #e2e8f0',
-  background: '#fff',
-  color: '#0f172a',
-  textDecoration: 'none',
-  fontSize: 12,
-  fontWeight: 600
-};
-
-const errorBoxStyle = {
-  padding: '10px 12px',
-  borderRadius: 6,
-  border: '1px solid #fecaca',
-  background: '#fee2e2',
-  color: '#991b1b',
-  marginBottom: 12,
-  fontSize: 14
-};
-
-const actionBtnStyle = (color, bg) => ({
-  padding: '6px 10px',
-  borderRadius: 6,
-  border: `1px solid ${color}`,
-  background: bg,
-  color,
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: 'pointer'
-});
 
 export default DoctorNewVerification;

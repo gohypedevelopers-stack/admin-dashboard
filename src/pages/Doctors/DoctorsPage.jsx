@@ -1,17 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import AdminTable from '../../components/Common/AdminTable';
-import { apiRequest } from '../../utils/api';
+import { Search, Filter, MoreVertical, Trash2, Shield, AlertCircle, CheckCircle, Eye } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
+import { doctorService } from '../../services/doctorService';
+import DoctorEditModal from '../../components/Doctors/DoctorEditModal';
+import DoctorDetailsModal from '../../components/Doctors/DoctorDetailsModal';
 import './doctors-page.css';
-
-const COLUMNS = [
-  { key: 'id', label: 'ID', type: 'text' },
-  { key: 'name', label: 'Doctor Name', type: 'text' },
-  { key: 'email', label: 'Email', type: 'email' },
-  { key: 'specialty', label: 'Specialty', type: 'text' },
-  { key: 'city', label: 'City', type: 'text' },
-  { key: 'status', label: 'Status', type: 'text' },
-];
 
 const DoctorsPage = () => {
   const [filters, setFilters] = useState({
@@ -19,136 +12,252 @@ const DoctorsPage = () => {
     specialization: '',
     city: '',
   });
-  const [selectedDoctor, setSelectedDoctor] = useState('');
-  const [actionMessage, setActionMessage] = useState('');
-  const [actionError, setActionError] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDoctors, setSelectedDoctors] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [reloadTrigger, setReloadTrigger] = useState(0);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const query = useMemo(() => {
-    const params = new URLSearchParams();
-    if (filters.status && filters.status !== 'all') {
-      params.set('status', filters.status);
-    }
-    if (filters.specialization) {
-      params.set('specialization', filters.specialization);
-    }
-    if (filters.city) {
-      params.set('city', filters.city);
-    }
-    return params.toString();
-  }, [filters]);
+  // Modal State
+  const [viewDoctor, setViewDoctor] = useState(null);
+  const [editDoctor, setEditDoctor] = useState(null);
 
   const { data, loading, error } = useApiData(async () => {
-    const payload = await apiRequest(`/api/admin/doctors?${query}`);
-    return payload?.data || [];
-  }, [query, reloadTrigger]);
+    const payload = await doctorService.getAllDoctors();
+    let list = payload?.data || [];
 
-  const tableData = useMemo(() => data, [data]);
-
-  useEffect(() => {
-    if (!selectedDoctor && tableData.length) {
-      setSelectedDoctor(tableData[0].id);
+    // Client-side filtering for specific fields if needed
+    if (filters.status && filters.status !== 'all') {
+      const isActive = filters.status === 'active';
+      list = list.filter(d => !!d.isActive === isActive);
     }
-  }, [tableData, selectedDoctor]);
+    if (filters.specialization) {
+      list = list.filter(d => d.specialization?.toLowerCase().includes(filters.specialization.toLowerCase()));
+    }
+    if (filters.city) {
+      list = list.filter(d => d.city?.toLowerCase().includes(filters.city.toLowerCase()));
+    }
 
-  const handleStatusToggle = async () => {
-    if (!selectedDoctor) return;
-    const doctor = data.find((doc) => doc.id === selectedDoctor);
-    if (!doctor) return;
-    setActionLoading(true);
-    setActionError('');
-    try {
-      await apiRequest(`/api/admin/doctors/${selectedDoctor}/status`, {
-        method: 'PATCH',
-        body: { isActive: !doctor.isActive },
-      });
-      setActionMessage(`Doctor ${doctor.name} is now ${doctor.isActive ? 'inactive' : 'active'}.`);
-      setReloadTrigger((prev) => prev + 1);
-    } catch (err) {
-      setActionError(err?.message || 'Unable to update status');
-    } finally {
-      setActionLoading(false);
+    return list.map(doc => ({
+      ...doc, // Keep all original fields for the modal
+      id: doc._id,
+      name: doc.user?.userName || 'Unknown',
+      email: doc.user?.email || 'Unknown',
+      specialization: doc.specialization || '-',
+      city: doc.city || '-',
+      status: doc.isActive ? 'Active' : 'Inactive',
+      isActive: doc.isActive
+    }));
+  }, [filters, reloadTrigger]);
+
+  // Search Filtering
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter(doc =>
+      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [data, searchTerm]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedDoctors(paginatedData.map(d => d.id));
+    } else {
+      setSelectedDoctors([]);
     }
   };
 
+  const handleSelectDoctor = (id) => {
+    setSelectedDoctors(prev =>
+      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
+    );
+  };
+
+  const handleUpdate = () => {
+    setReloadTrigger(prev => prev + 1);
+  };
+
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
   return (
-    <div style={{ padding: '20px' }}>
-      {error && (
-        <div style={errorStyle}>
-          {error}
-        </div>
-      )}
-      <div className="filters-card">
-        <input
-          type="text"
-          placeholder="Search by specialization"
-          value={filters.specialization}
-          onChange={(e) => setFilters((prev) => ({ ...prev, specialization: e.target.value }))}
-        />
-        <input
-          type="text"
-          placeholder="Filter by city"
-          value={filters.city}
-          onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
-        />
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-        >
-          {['all', 'active', 'inactive'].map((status) => (
-            <option key={status} value={status}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
+    <div className="doctors-page">
+      <div className="page-header">
+        <h1 className="page-title">Doctors Management</h1>
+        <p className="page-subtitle">Manage registered doctors, their verification status, and availability.</p>
       </div>
-      {loading ? (
-        <div style={{ color: '#475569', padding: '12px 0' }}>Loading doctors...</div>
-      ) : (
-        <>
-          <AdminTable title="Doctors Management" columns={COLUMNS} initialData={tableData} />
-          <div className="doctor-actions">
-            <h3>Doctor actions</h3>
-            {actionMessage && <div className="action-message success">{actionMessage}</div>}
-            {actionError && <div className="action-message error">{actionError}</div>}
-            <div className="action-row">
-              <label htmlFor="doctor-select">Select doctor</label>
-              <select
-                id="doctor-select"
-                value={selectedDoctor}
-                onChange={(e) => setSelectedDoctor(e.target.value)}
-              >
-                <option value="">Select doctor</option>
-                {tableData.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.name} ({doc.specialization})
-                  </option>
-                ))}
-              </select>
+
+      <div className="controls-bar">
+        <div className="search-wrapper">
+          <Search size={16} className="search-icon" />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search by name, email, or specialty..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="filters-group">
+          <input
+            type="text"
+            className="filter-select"
+            style={{ width: 140 }}
+            placeholder="Filter City"
+            value={filters.city}
+            onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
+          />
+          <select
+            className="filter-select"
+            value={filters.status}
+            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-state">Loading doctors...</div>
+        ) : error ? (
+          <div className="error-state">{error}</div>
+        ) : (
+          <table className="doctors-table">
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={paginatedData.length > 0 && selectedDoctors.length === paginatedData.length}
+                  />
+                </th>
+                <th>Doctor</th>
+                <th>Specialization</th>
+                <th>City</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedData.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="empty-state">No doctors found matching your criteria.</td>
+                </tr>
+              ) : (
+                paginatedData.map((doc) => (
+                  <tr key={doc.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedDoctors.includes(doc.id)}
+                        onChange={() => handleSelectDoctor(doc.id)}
+                      />
+                    </td>
+                    <td>
+                      <div className="doctor-cell">
+                        <div className="doctor-avatar">
+                          {getInitials(doc.name)}
+                        </div>
+                        <div className="doctor-info">
+                          <span className="doctor-name">{doc.name}</span>
+                          <span className="doctor-email">{doc.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{doc.specialization}</td>
+                    <td>{doc.city}</td>
+                    <td>
+                      <span className={`status-badge status-${doc.status.toLowerCase()}`}>
+                        {doc.status}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <button
+                          className="action-btn"
+                          title="View Details"
+                          onClick={() => setViewDoctor(doc)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          className="action-btn-primary"
+                          onClick={() => setEditDoctor(doc)}
+                        >
+                          Action
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {!loading && !error && filteredData.length > 0 && (
+          <div className="pagination">
+            <span className="pagination-text">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} doctors
+            </span>
+            <div className="pagination-controls">
               <button
-                type="button"
-                onClick={handleStatusToggle}
-                disabled={actionLoading || !selectedDoctor}
+                className="page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
               >
-                Toggle status
+                Previous
+              </button>
+              <button
+                className="page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+              >
+                Next
               </button>
             </div>
           </div>
-        </>
+        )}
+      </div>
+
+      {/* Details Modal */}
+      {viewDoctor && (
+        <DoctorDetailsModal
+          doctor={viewDoctor}
+          onClose={() => setViewDoctor(null)}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {editDoctor && (
+        <DoctorEditModal
+          doctor={editDoctor}
+          onClose={() => setEditDoctor(null)}
+          onUpdate={handleUpdate}
+        />
       )}
     </div>
   );
-};
-
-const errorStyle = {
-  padding: '10px 12px',
-  border: '1px solid #fecaca',
-  borderRadius: 6,
-  background: '#fee2e2',
-  color: '#991b1b',
-  marginBottom: 12,
-  fontSize: 14
 };
 
 export default DoctorsPage;
