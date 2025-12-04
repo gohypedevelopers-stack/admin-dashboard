@@ -1,69 +1,130 @@
-import React, { useMemo } from 'react';
-import AdminTable from '../../components/Common/AdminTable';
-import { apiRequest } from '../../utils/api';
+import React, { useState, useMemo } from 'react';
+import { Plus, Search, Filter, FileText, Image as ImageIcon } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
-
-const COLUMNS = [
-  { key: 'id', label: 'ID', type: 'text' },
-  { key: 'title', label: 'Title', type: 'text' },
-  { key: 'type', label: 'Type', type: 'text' },
-  { key: 'published', label: 'Published', type: 'text' },
-];
+import { apiRequest } from '../../utils/api';
+import ArticleModal from '../../components/Content/ArticleModal';
+import './content-manager.css';
 
 const ContentManager = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const { data, loading, error } = useApiData(async () => {
-    const [articlesRes, faqsRes] = await Promise.all([
-      apiRequest('/api/admin/content/articles'),
-      apiRequest('/api/admin/content/faqs'),
-    ]);
+    // Using the correct endpoint found in app_routes.js
+    const payload = await apiRequest('/api/admin/health-articles');
+    console.log('Article data:', payload);
+    return Array.isArray(payload?.data) ? payload.data : [];
+  }, [refreshKey]);
 
-    const normalizeList = (payload, type) => {
-      const list = Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload?.faqs)
-          ? payload.faqs
-          : Array.isArray(payload?.articles)
-            ? payload.articles
-            : Array.isArray(payload)
-              ? payload
-              : [];
-      return list.map((item, idx) => ({
-        id: item._id || item.id || `${type}-${idx + 1}`,
-        title: item.title || item.question || '-',
-        type,
-        published: item.updatedAt
-          ? item.updatedAt.slice(0, 10)
-          : item.createdAt
-            ? item.createdAt.slice(0, 10)
-            : '-',
-      }));
-    };
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter(article =>
+      (article.title || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [data, searchTerm]);
 
-    return [...normalizeList(articlesRes, 'Article'), ...normalizeList(faqsRes, 'FAQ')];
-  }, []);
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
-  const tableData = useMemo(() => data, [data]);
+  const handleModalSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
-    <div style={{ padding: '20px' }}>
-      {error && <div style={errorStyle}>{error}</div>}
-      {loading ? (
-        <div style={{ padding: '12px 0', color: '#475569' }}>Loading content...</div>
-      ) : (
-        <AdminTable title="Content Management" columns={COLUMNS} initialData={tableData} />
-      )}
+    <div className="content-page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Content Manager</h1>
+          <p className="page-subtitle">Manage health articles and educational content.</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+            <Plus size={20} />
+            Add Article
+          </button>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <div className="controls-bar">
+          <div className="search-box">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search articles..."
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="action-btn">
+            <Filter size={18} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="loading-state">Loading content...</div>
+        ) : error ? (
+          <div className="error-state">{error}</div>
+        ) : (
+          <table className="content-table">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Type</th>
+                <th>Author</th>
+                <th>Date</th>
+                <th>Time to Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="empty-state">No articles found.</td>
+                </tr>
+              ) : (
+                filteredData.map((article) => (
+                  <tr key={article._id}>
+                    <td>
+                      <div className="article-info">
+                        {article.image ? (
+                          <img src={article.image} alt="" className="article-image" />
+                        ) : (
+                          <div className="article-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ImageIcon size={20} color="#94a3b8" />
+                          </div>
+                        )}
+                        <div className="article-details">
+                          <span className="article-title">{article.title}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span className="type-badge">Article</span></td>
+                    <td>{article.author?.userName || 'Admin'}</td>
+                    <td>{formatDate(article.date || article.createdAt)}</td>
+                    <td>{article.time || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <ArticleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   );
-};
-
-const errorStyle = {
-  padding: '10px 12px',
-  border: '1px solid #fecaca',
-  borderRadius: 6,
-  background: '#fee2e2',
-  color: '#991b1b',
-  marginBottom: 12,
-  fontSize: 14
 };
 
 export default ContentManager;
