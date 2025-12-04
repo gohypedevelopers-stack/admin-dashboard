@@ -7,6 +7,7 @@ import {
   MessageSquare,
   RefreshCw,
   AlertCircle,
+  MoreHorizontal,
 } from 'lucide-react';
 import {
   BarChart,
@@ -24,15 +25,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { useNavigate } from 'react-router-dom';
 import './dashboard.css';
 
-const fallbackTrend = [
-  { date: 'Mon', count: 3200 },
-  { date: 'Tue', count: 2800 },
-  { date: 'Wed', count: 3600 },
-  { date: 'Thu', count: 3900 },
-  { date: 'Fri', count: 4200 },
-  { date: 'Sat', count: 3100 },
-  { date: 'Sun', count: 4500 },
-];
+
 
 const formatCurrency = (value) =>
   typeof value === 'number'
@@ -83,7 +76,8 @@ const DashboardHome = () => {
   const {
     overview,
     verifications,
-    topDoctors: fetchedTopDoctors,
+    topDoctorsByAppointments,
+    topDoctorsByRevenue,
     loading,
     error,
     refresh,
@@ -144,13 +138,14 @@ const DashboardHome = () => {
   ]);
 
   const trendData = useMemo(() => {
-    // Fallback since reports endpoint is removed
-    return fallbackTrend.map((item) => ({
+    if (!overview?.trend || !Array.isArray(overview.trend)) return [];
+
+    return overview.trend.map((item) => ({
       name: formatTrendLabel(item.date),
-      appointments: item.count ?? item.appointments ?? 0,
-      value: item.count ?? item.appointments ?? 0,
+      appointments: item.count,
+      value: item.count,
     }));
-  }, []);
+  }, [overview]);
 
   const sparklineData = trendData.map((item) => ({
     month: item.name,
@@ -182,20 +177,7 @@ const DashboardHome = () => {
   };
 
   // Removed reports usage
-  const performanceMap = useMemo(() => {
-    return new Map();
-  }, []);
 
-  const topDoctors = useMemo(() => {
-    if (!Array.isArray(fetchedTopDoctors)) return [];
-    return fetchedTopDoctors.map((doctor) => {
-      const idKey = doctor?._id ? doctor._id.toString() : '';
-      return {
-        ...doctor,
-        appointments: performanceMap.get(idKey) ?? doctor.appointments ?? 0,
-      };
-    });
-  }, [fetchedTopDoctors, performanceMap]);
   const flags = overview?.featureFlags || [];
   const health = overview?.systemHealth?.mongodb;
 
@@ -310,24 +292,49 @@ const DashboardHome = () => {
       </section>
 
       <section className="section-grid">
+        {/* Most Popular Doctors */}
         <div className="list-card">
           <div className="list-header">
-            <h3>Top doctors</h3>
-            <p>Performance in the selected window</p>
+            <h3>Most Popular Doctors</h3>
+            <p>By appointment volume</p>
           </div>
           <ul className="compact-list">
-            {topDoctors.length === 0 && <li className="empty-row">No data available yet.</li>}
-            {topDoctors.map((doctor, idx) => (
+            {topDoctorsByAppointments.length === 0 && <li className="empty-row">No data available yet.</li>}
+            {topDoctorsByAppointments.map((doctor, idx) => (
               <li key={doctor._id || idx}>
                 <div>
                   <p className="compact-title">
                     {idx + 1}. {doctor.fullName || doctor.name || 'Doctor'}
                   </p>
                   <p className="compact-meta">
-                    {doctor.specialty || doctor.specialization || 'General'} · {doctor.city || 'Remote'}
+                    {doctor.specialization || 'General'} · {doctor.city || 'Remote'}
                   </p>
                 </div>
-                <strong>{formatNumber(doctor.appointments)}</strong>
+                <strong>{formatNumber(doctor.value)} Appts</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Highest Earning Doctors */}
+        <div className="list-card">
+          <div className="list-header">
+            <h3>Highest Earning Doctors</h3>
+            <p>By total revenue generated</p>
+          </div>
+          <ul className="compact-list">
+            {topDoctorsByRevenue.length === 0 && <li className="empty-row">No data available yet.</li>}
+            {topDoctorsByRevenue.map((doctor, idx) => (
+              <li key={doctor._id || idx}>
+                <div>
+                  <p className="compact-title">
+                    {idx + 1}. {doctor.fullName || doctor.name || 'Doctor'}
+                  </p>
+                  <p className="compact-meta">
+                    {doctor.specialization || 'General'} · {doctor.city || 'Remote'}
+                  </p>
+                </div>
+                <strong>{formatCurrency(doctor.value)}</strong>
               </li>
             ))}
           </ul>

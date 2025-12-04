@@ -24,7 +24,10 @@ import DoctorAvailability from './pages/Doctors/DoctorAvailability';
 import DoctorTodayBooked from './pages/Doctors/DoctorTodayBooked';
 import DoctorTop from './pages/Doctors/DoctorTop';
 import DoctorRevenue from './pages/Doctors/DoctorRevenue';
+
 import AdminSignIn from './pages/Auth/AdminSignIn';
+import SettingsPage from './pages/Settings/SettingsPage';
+import SupportPage from './pages/Support/SupportPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -65,7 +68,9 @@ const AppLayout = () => {
           <Route path="/appointments" element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
           <Route path="/content" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />
           <Route path="/products" element={<ProtectedRoute><PharmacyProducts /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><div style={{ padding: '20px' }}><h1>Settings</h1></div></ProtectedRoute>} />
+
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/admin-signin'} replace />} />
         </Routes>
       </main>

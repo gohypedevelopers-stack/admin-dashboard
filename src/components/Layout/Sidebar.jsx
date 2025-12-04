@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Users, Stethoscope, Package, 
-  Calendar, FileText, ShoppingBag, LogOut, Menu, X, ChevronDown
+import {
+  LayoutDashboard, Users, Stethoscope, Package,
+  Calendar, FileText, ShoppingBag, LogOut, Menu, X, ChevronDown,
+  Settings, MessageSquare
 } from 'lucide-react';
 import './sidebar.css';
 import { useAuth } from '../../context/AuthContext';
@@ -29,6 +30,8 @@ const Sidebar = () => {
     { icon: Calendar, label: 'Appointments', path: '/appointments' },
     { icon: FileText, label: 'Content', path: '/content' },
     { icon: ShoppingBag, label: 'Products', path: '/products' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: MessageSquare, label: 'Support', path: '/support' },
   ];
 
   const USER_ROLES = ['All', 'Admin', 'Doctor', 'Patient', 'Pharmacy'];

@@ -4,14 +4,16 @@ import { apiRequest } from '../utils/api';
 const DASHBOARD_ENDPOINTS = {
   overview: '/api/admin/dashboard/stats',
   verifications: '/api/admin/verifications?type=doctor&limit=5&page=1',
-  topDoctors: '/api/doctors/top?limit=5',
+  topDoctors: '/api/admin/doctors/top?limit=5',
 };
 
 export const useDashboardData = () => {
   const isMounted = useRef(true);
   const [overview, setOverview] = useState(null);
   const [verifications, setVerifications] = useState([]);
-  const [topDoctors, setTopDoctors] = useState([]);
+
+  const [topDoctorsByAppointments, setTopDoctorsByAppointments] = useState([]);
+  const [topDoctorsByRevenue, setTopDoctorsByRevenue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -31,7 +33,8 @@ export const useDashboardData = () => {
 
       setOverview(overviewRes?.data ?? null);
       setVerifications(verifsRes?.data?.verifications ?? []);
-      setTopDoctors(topDoctorsRes?.data ?? []);
+      setTopDoctorsByAppointments(topDoctorsRes?.data?.byAppointments ?? []);
+      setTopDoctorsByRevenue(topDoctorsRes?.data?.byRevenue ?? []);
     } catch (err) {
       if (!isMounted.current) return;
       setError(err?.message || 'Unable to load dashboard data');
@@ -56,7 +59,10 @@ export const useDashboardData = () => {
   return {
     overview,
     verifications,
-    topDoctors,
+    overview,
+    verifications,
+    topDoctorsByAppointments,
+    topDoctorsByRevenue,
     loading,
     error,
     refresh: loadDashboard,
