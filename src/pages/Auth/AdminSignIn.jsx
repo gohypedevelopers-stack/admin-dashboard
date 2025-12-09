@@ -53,8 +53,11 @@ const AdminSignIn = () => {
         setAdminToken(token);
       }
 
-      login({ user: data.user || { email: formData.email, role: 'admin' }, token });
-      navigate('/', { replace: true });
+      // Token is already set via setAdminToken(token) above.
+      // The AuthContext will pick up the token on next render via initAuth.
+      // Navigation will happen automatically via the useEffect that watches isAuthenticated.
+      // Force a page reload to trigger AuthContext re-init with the new token
+      window.location.href = '/';
     } catch (err) {
       setError(err?.message || 'Unable to sign in. Please try again.');
     } finally {
