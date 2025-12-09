@@ -58,14 +58,24 @@ const DoctorNewVerification = () => {
 
   const items = data;
 
+  const removeFromList = (verificationId) => {
+    setData((prev) => prev.filter((item) => item.id !== verificationId));
+  };
+
   const updateLocalStatus = (verificationId, status, extra = {}) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.id === verificationId
-          ? { ...item, status, ...extra }
-          : item
-      )
-    );
+    // For approve/reject, remove from list since this page only shows pending
+    if (status === 'approved' || status === 'rejected') {
+      removeFromList(verificationId);
+    } else {
+      // For under_review, just update the status badge
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === verificationId
+            ? { ...item, status, ...extra }
+            : item
+        )
+      );
+    }
   };
 
   const handleAction = async (verificationId, type) => {

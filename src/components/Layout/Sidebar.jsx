@@ -45,6 +45,7 @@ const Sidebar = () => {
     'Today Booked',
     'Top Doctors',
     'Revenue',
+    'Doorstep Services',
   ];
 
   const doctorViewPaths = {
@@ -56,6 +57,7 @@ const Sidebar = () => {
     'Today Booked': '/doctors/today-booked',
     'Top Doctors': '/doctors/top',
     Revenue: '/doctors/revenue',
+    'Doorstep Services': '/doctors/services',
   };
   const userRolePaths = {
     All: '/users',

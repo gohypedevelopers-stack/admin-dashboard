@@ -24,6 +24,7 @@ import DoctorAvailability from './pages/Doctors/DoctorAvailability';
 import DoctorTodayBooked from './pages/Doctors/DoctorTodayBooked';
 import DoctorTop from './pages/Doctors/DoctorTop';
 import DoctorRevenue from './pages/Doctors/DoctorRevenue';
+import DoctorServices from './pages/Doctors/DoctorServices';
 
 import AdminSignIn from './pages/Auth/AdminSignIn';
 import SettingsPage from './pages/Settings/SettingsPage';
@@ -62,6 +63,7 @@ const AppLayout = () => {
           <Route path="/doctors/today-booked" element={<ProtectedRoute><DoctorTodayBooked /></ProtectedRoute>} />
           <Route path="/doctors/top" element={<ProtectedRoute><DoctorTop /></ProtectedRoute>} />
           <Route path="/doctors/revenue" element={<ProtectedRoute><DoctorRevenue /></ProtectedRoute>} />
+          <Route path="/doctors/services" element={<ProtectedRoute><DoctorServices /></ProtectedRoute>} />
           <Route path="/pharmacies" element={<ProtectedRoute><PharmaciesPage /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
           <Route path="/verification" element={<ProtectedRoute><VerificationList /></ProtectedRoute>} />
