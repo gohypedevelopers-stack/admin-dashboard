@@ -8,6 +8,10 @@ import {
   RefreshCw,
   AlertCircle,
   MoreHorizontal,
+  Package,
+  ShoppingCart,
+  Store,
+  TrendingUp,
 } from 'lucide-react';
 import {
   BarChart,
@@ -78,6 +82,10 @@ const DashboardHome = () => {
     verifications,
     topDoctorsByAppointments,
     topDoctorsByRevenue,
+    pharmacyStats,
+    productStats,
+    orderStats,
+    topPharmacies,
     loading,
     error,
     refresh,
@@ -225,6 +233,41 @@ const DashboardHome = () => {
         ))}
       </section>
 
+      {/* Pharmacy Overview Stats */}
+      <section className="stats-grid" style={{ marginTop: '1.5rem' }}>
+        <StatCard
+          title="Total Pharmacies"
+          value={formatNumber(pharmacyStats.total)}
+          note={`Active: ${formatNumber(pharmacyStats.active)} · Pending: ${formatNumber(pharmacyStats.pending)}`}
+          icon={Store}
+          color="teal"
+          onClick={() => navigate('/pharmacies')}
+        />
+        <StatCard
+          title="Inventory Products"
+          value={formatNumber(productStats.total)}
+          note={productStats.lowStock > 0 ? `⚠ ${formatNumber(productStats.lowStock)} low stock items` : 'All products stocked'}
+          icon={Package}
+          color="indigo"
+          onClick={() => navigate('/products')}
+        />
+        <StatCard
+          title="Pharmacy Orders"
+          value={formatNumber(orderStats.total)}
+          note={`Pending: ${formatNumber(orderStats.byStatus?.pending || 0)} · Delivered: ${formatNumber(orderStats.byStatus?.delivered || 0)}`}
+          icon={ShoppingCart}
+          color="amber"
+          onClick={() => navigate('/orders')}
+        />
+        <StatCard
+          title="Pharmacy Revenue"
+          value={formatCurrency(orderStats.totalRevenue)}
+          note={`From ${formatNumber((orderStats.byStatus?.delivered || 0) + (orderStats.byStatus?.shipped || 0))} completed orders`}
+          icon={TrendingUp}
+          color="emerald"
+        />
+      </section>
+
       <section className="chart-card">
         <div className="chart-head">
           <div>
@@ -335,6 +378,100 @@ const DashboardHome = () => {
                   </p>
                 </div>
                 <strong>{formatCurrency(doctor.value)}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Order Analytics Section */}
+      <section className="section-grid">
+        <div className="list-card" style={{ gridColumn: 'span 2' }}>
+          <div className="list-header">
+            <h3>Order Analytics</h3>
+            <p>Pharmacy order status breakdown and recent activity</p>
+          </div>
+          <div className="health-row" style={{ marginBottom: '1rem' }}>
+            {Object.entries(orderStats.byStatus || {}).map(([status, count]) => (
+              <div key={status} style={{ textAlign: 'center', flex: 1 }}>
+                <p className="health-label" style={{ textTransform: 'capitalize' }}>{status.replace(/_/g, ' ')}</p>
+                <p className="health-value">{formatNumber(count)}</p>
+              </div>
+            ))}
+            {Object.keys(orderStats.byStatus || {}).length === 0 && (
+              <p className="empty-row" style={{ width: '100%', textAlign: 'center' }}>No order data yet.</p>
+            )}
+          </div>
+          <div className="table-wrapper">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderStats.recentOrders.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="empty-row">No recent orders.</td>
+                  </tr>
+                )}
+                {orderStats.recentOrders.map((order) => (
+                  <tr key={order._id}>
+                    <td>{order.customerName}</td>
+                    <td>{formatCurrency(order.total)}</td>
+                    <td>
+                      <span className={`status-pill status-${order.status}`}>
+                        {order.status?.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Pharmacies Section */}
+      <section className="section-grid">
+        <div className="list-card">
+          <div className="list-header">
+            <h3>Top Pharmacies by Orders</h3>
+            <p>By total order count</p>
+          </div>
+          <ul className="compact-list">
+            {topPharmacies.byOrders.length === 0 && <li className="empty-row">No pharmacy order data.</li>}
+            {topPharmacies.byOrders.map((pharmacy, idx) => (
+              <li key={pharmacy.pharmacyId || idx}>
+                <div>
+                  <p className="compact-title">
+                    {idx + 1}. Pharmacy #{pharmacy.pharmacyId?.slice(-6) || 'Unknown'}
+                  </p>
+                </div>
+                <strong>{formatNumber(pharmacy.orderCount)} Orders</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="list-card">
+          <div className="list-header">
+            <h3>Top Pharmacies by Revenue</h3>
+            <p>By total revenue earned</p>
+          </div>
+          <ul className="compact-list">
+            {topPharmacies.byRevenue.length === 0 && <li className="empty-row">No pharmacy revenue data.</li>}
+            {topPharmacies.byRevenue.map((pharmacy, idx) => (
+              <li key={pharmacy.pharmacyId || idx}>
+                <div>
+                  <p className="compact-title">
+                    {idx + 1}. Pharmacy #{pharmacy.pharmacyId?.slice(-6) || 'Unknown'}
+                  </p>
+                </div>
+                <strong>{formatCurrency(pharmacy.revenue)}</strong>
               </li>
             ))}
           </ul>
