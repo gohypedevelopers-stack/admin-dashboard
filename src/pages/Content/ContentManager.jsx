@@ -1,19 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Filter, FileText, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Filter, FileText, Image as ImageIcon, Eye, Edit } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
 import { apiRequest } from '../../utils/api';
 import ArticleModal from '../../components/Content/ArticleModal';
+import ArticleDetailsModal from '../../components/Content/ArticleDetailsModal';
 import './content-manager.css';
 
 const ContentManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [articleToEdit, setArticleToEdit] = useState(null);
 
   const { data, loading, error } = useApiData(async () => {
-    // Using the correct endpoint found in app_routes.js
     const payload = await apiRequest('/api/admin/health-articles');
-    console.log('Article data:', payload);
     return Array.isArray(payload?.data) ? payload.data : [];
   }, [refreshKey]);
 
@@ -37,6 +39,21 @@ const ContentManager = () => {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleAddClick = () => {
+    setArticleToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (article) => {
+    setArticleToEdit(article);
+    setIsModalOpen(true);
+  };
+
+  const handleViewClick = (article) => {
+    setSelectedArticle(article);
+    setIsDetailsOpen(true);
+  };
+
   return (
     <div className="content-page">
       <div className="page-header">
@@ -45,7 +62,7 @@ const ContentManager = () => {
           <p className="page-subtitle">Manage health articles and educational content.</p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+          <button className="btn-primary" onClick={handleAddClick}>
             <Plus size={20} />
             Add Article
           </button>
@@ -82,12 +99,13 @@ const ContentManager = () => {
                 <th>Author</th>
                 <th>Date</th>
                 <th>Time to Read</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="empty-state">No articles found.</td>
+                  <td colSpan="6" className="empty-state">No articles found.</td>
                 </tr>
               ) : (
                 filteredData.map((article) => (
@@ -110,6 +128,24 @@ const ContentManager = () => {
                     <td>{article.author?.userName || 'Admin'}</td>
                     <td>{formatDate(article.date || article.createdAt)}</td>
                     <td>{article.time || '-'}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="action-btn"
+                          onClick={() => handleViewClick(article)}
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={() => handleEditClick(article)}
+                          title="Edit Article"
+                        >
+                          <Edit size={18} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -122,6 +158,13 @@ const ContentManager = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
+        articleToEdit={articleToEdit}
+      />
+
+      <ArticleDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        article={selectedArticle}
       />
     </div>
   );

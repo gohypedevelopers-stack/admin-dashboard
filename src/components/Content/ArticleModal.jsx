@@ -45,15 +45,24 @@ const ArticleModal = ({ isOpen, onClose, onSuccess, articleToEdit = null }) => {
         setError(null);
 
         try {
-            // Using the new endpoint we just added
-            const response = await apiRequest('/api/admin/health-articles', {
-                method: 'POST',
+            const url = articleToEdit
+                ? `/api/admin/health-articles/${articleToEdit._id}`
+                : '/api/admin/health-articles';
+
+            const method = articleToEdit ? 'PUT' : 'POST';
+
+            const response = await apiRequest(url, {
+                method: method,
                 body: JSON.stringify(formData)
             });
-            console.log('Article creation response:', response);
+            console.log('Article save response:', response);
 
-            onSuccess();
-            onClose();
+            if (response.success) {
+                onSuccess();
+                onClose();
+            } else {
+                throw new Error(response.message || 'Operation failed');
+            }
         } catch (err) {
             console.error('Failed to save article:', err);
             setError(err.message || 'Failed to save article');
