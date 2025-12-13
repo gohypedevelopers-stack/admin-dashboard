@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://admin-dashboard-eight-sigma-10.vercel.app/sitemap.xml

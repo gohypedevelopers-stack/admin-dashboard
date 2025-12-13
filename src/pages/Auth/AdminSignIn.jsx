@@ -65,90 +65,101 @@ const AdminSignIn = () => {
 
   return (
     <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>Admin Portal</h1>
-          <p style={styles.subtitle}>Welcome back! Please sign in to continue.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <h1 style={styles.title}>Admin Portal</h1>
+            <p style={styles.subtitle}>Welcome back! Please sign in to continue.</p>
+          </div>
+
+          {error && (
+            <div style={styles.errorBox}>
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Email Address</label>
+              <div style={{
+                ...styles.inputWrapper,
+                borderColor: focusedField === 'email' ? '#2563eb' : '#e2e8f0',
+                boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
+              }}>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
+                  style={styles.input}
+                  placeholder="admin@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Password</label>
+              <div style={{
+                ...styles.inputWrapper,
+                borderColor: focusedField === 'password' ? '#2563eb' : '#e2e8f0',
+                boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
+              }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
+                  style={{ ...styles.input, paddingRight: 40 }}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...styles.submitButton,
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} style={styles.spinner} />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
         </div>
 
-        {error && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
+        <div style={styles.footer}>
+          <p>© {new Date().getFullYear()} Doorspital. All rights reserved.</p>
+          <div style={styles.links}>
+            <a href="#" style={styles.link}>Privacy Policy</a>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <a href="#" style={styles.link}>Terms of Service</a>
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Email Address</label>
-            <div style={{
-              ...styles.inputWrapper,
-              borderColor: focusedField === 'email' ? '#2563eb' : '#e2e8f0',
-              boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
-            }}>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-                style={styles.input}
-                placeholder="admin@example.com"
-                autoComplete="email"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Password</label>
-            <div style={{
-              ...styles.inputWrapper,
-              borderColor: focusedField === 'password' ? '#2563eb' : '#e2e8f0',
-              boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
-            }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-                style={{ ...styles.input, paddingRight: 40 }}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.submitButton,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} style={styles.spinner} />
-                Signing in...
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -268,6 +279,23 @@ const styles = {
   },
   spinner: {
     animation: 'spin 1s linear infinite'
+  },
+  footer: {
+    textAlign: 'center',
+    color: '#64748b',
+    fontSize: '13px',
+  },
+  links: {
+    marginTop: '6px',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  link: {
+    color: '#64748b',
+    textDecoration: 'none',
+    transition: 'color 0.2s',
   }
 };
 
