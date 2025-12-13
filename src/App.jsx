@@ -13,6 +13,7 @@ import UsersPharmacy from './pages/Users/UsersPharmacy';
 import DoctorsPage from './pages/Doctors/DoctorsPage';
 import PharmaciesPage from './pages/Pharmacies/PharmaciesPage';
 import PharmacyDetails from './pages/Pharmacies/PharmacyDetails';
+import OrderDetails from './pages/Orders/OrderDetails';
 import OrdersPage from './pages/Orders/OrdersPage';
 import VerificationList from './pages/Verification/VerificationList';
 import AppointmentList from './pages/Appointments/AppointmentList';
@@ -68,6 +69,7 @@ const AppLayout = () => {
           <Route path="/pharmacies" element={<ProtectedRoute><PharmaciesPage /></ProtectedRoute>} />
           <Route path="/pharmacies/:pharmacyId" element={<ProtectedRoute><PharmacyDetails /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+          <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
           <Route path="/verification" element={<ProtectedRoute><VerificationList /></ProtectedRoute>} />
           <Route path="/appointments" element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
           <Route path="/content" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />

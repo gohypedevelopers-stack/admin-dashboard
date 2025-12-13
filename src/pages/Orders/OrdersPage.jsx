@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Filter, Trash2, Edit2, CheckCircle, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Trash2, Edit2, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { pickList } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
 import { pharmacyService } from '../../services/pharmacyService';
@@ -17,6 +18,7 @@ const formatDate = (value) => {
 };
 
 const OrdersPage = () => {
+  const navigate = useNavigate();
   const [refresh, setRefresh] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState('');
@@ -156,6 +158,13 @@ const OrdersPage = () => {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="action-btn"
+                          onClick={() => navigate(`/orders/${order._id}`)}
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
                         <button
                           className="action-btn"
                           onClick={() => {
