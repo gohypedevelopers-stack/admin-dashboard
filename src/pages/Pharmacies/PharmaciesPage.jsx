@@ -1,75 +1,51 @@
-import React, { useMemo, useState } from 'react';
-import { Plus, Search, Filter, MoreVertical, Package, Edit, Trash2 } from 'lucide-react';
-import { pickList } from '../../utils/api';
-import { useApiData } from '../../hooks/useApiData';
-import { pharmacyService } from '../../services/pharmacyService';
-import ProductModal from '../../components/Pharmacies/ProductModal';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Store, Phone, Mail, MapPin, Package, ShoppingBag, Eye } from 'lucide-react';
+import { apiRequest } from '../../utils/api';
 import './pharmacies-page.css';
 
-const formatPrice = (value) => {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-  return `Rs ${Number(value).toFixed(2)}`;
-};
-
 const PharmaciesPage = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pharmacies, setPharmacies] = useState([]);
 
-  const { data, loading, error } = useApiData(async () => {
-    const payload = await pharmacyService.getAllProducts();
-    const list =
-      (payload && payload.data && Array.isArray(payload.data.items) && payload.data.items) ||
-      pickList(payload);
-    return Array.isArray(list) ? list : [];
-  }, [refresh]);
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter(item =>
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [data, searchTerm]);
-
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditProduct = (product) => {
-    setEditingProduct(product);
-    setIsModalOpen(true);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await pharmacyService.deleteProduct(productId);
-        setRefresh(prev => prev + 1);
-      } catch (err) {
-        alert('Failed to delete product: ' + err.message);
+  const fetchPharmacies = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest('/api/admin/pharmacies');
+      if (response.success) {
+        setPharmacies(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch pharmacies');
       }
+    } catch (err) {
+      setError(err.message || 'Error loading pharmacies');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleModalSuccess = () => {
-    setRefresh(prev => prev + 1);
-  };
+  useEffect(() => {
+    fetchPharmacies();
+  }, []);
+
+  const filteredData = useMemo(() => {
+    if (!pharmacies) return [];
+    return pharmacies.filter(item =>
+      (item.storeName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (item.ownerName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (item.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+  }, [pharmacies, searchTerm]);
 
   return (
     <div className="pharmacies-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Pharmacy Products</h1>
-          <p className="page-subtitle">Manage your inventory and product listings.</p>
-        </div>
-        <div className="header-actions">
-          <button className="btn-primary" onClick={handleAddProduct}>
-            <Plus size={18} />
-            Add Product
-          </button>
+          <h1 className="page-title">Registered Pharmacies</h1>
+          <p className="page-subtitle">Monitor and manage all pharmacy partners.</p>
         </div>
       </div>
 
@@ -79,7 +55,7 @@ const PharmaciesPage = () => {
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search by store, owner, email..."
               className="search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -91,79 +67,90 @@ const PharmaciesPage = () => {
         </div>
 
         {loading ? (
-          <div className="loading-state">Loading products...</div>
+          <div className="loading-state">Loading pharmacies...</div>
         ) : error ? (
           <div className="error-state">{error}</div>
         ) : (
           <table className="products-table">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
+                <th>Pharmacy Details</th>
+                <th>Contact Info</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th>Products</th>
+                <th>Orders</th>
+                <th>Date Joined</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="empty-state">No products found.</td>
+                  <td colSpan="7" className="empty-state">No pharmacies found.</td>
                 </tr>
               ) : (
                 filteredData.map((item) => (
-                  <tr key={item._id || item.id}>
+                  <tr key={item._id}>
                     <td>
                       <div className="product-cell">
-                        {item.images && item.images[0] ? (
-                          <img src={item.images[0]} alt={item.name} className="product-image" />
-                        ) : (
-                          <div className="product-image-placeholder">
-                            {item.name?.charAt(0) || <Package size={20} />}
-                          </div>
-                        )}
+                        <div className="product-image-placeholder" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                          <Store size={20} />
+                        </div>
                         <div className="product-info">
-                          <span className="product-name">{item.name}</span>
-                          <span className="product-category">{item.manufacturer || 'Unknown Manufacturer'}</span>
+                          <span className="product-name">{item.storeName}</span>
+                          <span className="product-category">Owner: {item.ownerName}</span>
+                          <span className="product-category" style={{ fontSize: '0.75rem', color: '#64748b' }}>License: {item.drugLicenseNumber}</span>
                         </div>
                       </div>
                     </td>
-                    <td>{item.category || '-'}</td>
                     <td>
-                      <span className="price-tag">{formatPrice(item.price ?? item.mrp)}</span>
-                    </td>
-                    <td>
-                      <span style={{ color: item.stock < 10 ? '#ef4444' : 'inherit', fontWeight: 500 }}>
-                        {item.stock || 0} units
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${item.isPrescriptionRequired ? 'status-rx' :
-                        item.stock > 0 ? 'status-active' : 'status-inactive'
-                        }`}>
-                        {item.isPrescriptionRequired ? 'Rx Required' :
-                          item.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="action-btn"
-                          onClick={() => handleEditProduct(item)}
-                          title="Edit Product"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          className="action-btn"
-                          onClick={() => handleDeleteProduct(item._id || item.id)}
-                          title="Delete Product"
-                          style={{ color: '#ef4444' }}
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.875rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Mail size={14} className="text-gray-400" />
+                          <span>{item.email}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Phone size={14} className="text-gray-400" />
+                          <span>{item.phoneNumber}</span>
+                        </div>
+                        {item.address?.city && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <MapPin size={14} className="text-gray-400" />
+                            <span>{item.address.city}, {item.address.state}</span>
+                          </div>
+                        )}
                       </div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${item.status === 'active' ? 'status-active' :
+                          item.status === 'pending' ? 'status-rx' : 'status-inactive'
+                        }`}>
+                        {item.status?.charAt(0).toUpperCase() + item.status?.slice(1)}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Package size={16} className="text-slate-400" />
+                        <span style={{ fontWeight: 500 }}>{item.productCount || 0}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <ShoppingBag size={16} className="text-slate-400" />
+                        <span style={{ fontWeight: 500 }}>{item.orderCount || 0}</span>
+                      </div>
+                    </td>
+                    <td style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <button
+                        className="action-btn"
+                        onClick={() => navigate(`/pharmacies/${item._id}`)}
+                        title="View Details"
+                      >
+                        <Eye size={18} />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -172,13 +159,6 @@ const PharmaciesPage = () => {
           </table>
         )}
       </div>
-
-      <ProductModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        product={editingProduct}
-        onSuccess={handleModalSuccess}
-      />
     </div>
   );
 };
