@@ -99,6 +99,7 @@ export const useDashboardData = () => {
       const orderList = Array.isArray(orders) ? orders : [];
       const statusCounts = {};
       let totalRevenue = 0;
+      const pharmacyNames = {};
       const pharmacyOrderCounts = {};
       const pharmacyRevenueTotals = {};
 
@@ -113,7 +114,14 @@ export const useDashboardData = () => {
         }
 
         // Track pharmacy stats
-        const pharmacyId = order.pharmacy?._id || order.pharmacy || 'unknown';
+        const pharmacyObj = order.pharmacy;
+        const pharmacyId = pharmacyObj?._id || pharmacyObj || 'unknown';
+
+        // Extract name if available, otherwise fallback is handled in UI or here
+        if (pharmacyObj?.storeName) {
+          pharmacyNames[pharmacyId] = pharmacyObj.storeName;
+        }
+
         pharmacyOrderCounts[pharmacyId] = (pharmacyOrderCounts[pharmacyId] || 0) + 1;
         pharmacyRevenueTotals[pharmacyId] = (pharmacyRevenueTotals[pharmacyId] || 0) + (order.total || 0);
       });
@@ -122,11 +130,20 @@ export const useDashboardData = () => {
       const sortedByOrders = Object.entries(pharmacyOrderCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
-        .map(([id, count]) => ({ pharmacyId: id, orderCount: count }));
+        .map(([id, count]) => ({
+          pharmacyId: id,
+          name: pharmacyNames[id] || `Pharmacy #${id.slice(-6)}`,
+          orderCount: count
+        }));
+
       const sortedByRevenue = Object.entries(pharmacyRevenueTotals)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
-        .map(([id, revenue]) => ({ pharmacyId: id, revenue }));
+        .map(([id, revenue]) => ({
+          pharmacyId: id,
+          name: pharmacyNames[id] || `Pharmacy #${id.slice(-6)}`,
+          revenue
+        }));
 
       setOrderStats({
         total: orderList.length,

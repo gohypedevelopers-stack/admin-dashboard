@@ -449,7 +449,7 @@ const DashboardHome = () => {
               <li key={pharmacy.pharmacyId || idx}>
                 <div>
                   <p className="compact-title">
-                    {idx + 1}. Pharmacy #{pharmacy.pharmacyId?.slice(-6) || 'Unknown'}
+                    {idx + 1}. {pharmacy.name || 'Unknown Pharmacy'}
                   </p>
                 </div>
                 <strong>{formatNumber(pharmacy.orderCount)} Orders</strong>
@@ -468,7 +468,7 @@ const DashboardHome = () => {
               <li key={pharmacy.pharmacyId || idx}>
                 <div>
                   <p className="compact-title">
-                    {idx + 1}. Pharmacy #{pharmacy.pharmacyId?.slice(-6) || 'Unknown'}
+                    {idx + 1}. {pharmacy.name || 'Unknown Pharmacy'}
                   </p>
                 </div>
                 <strong>{formatCurrency(pharmacy.revenue)}</strong>
