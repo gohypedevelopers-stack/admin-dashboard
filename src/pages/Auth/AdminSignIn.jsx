@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { buildApiUrl, setAdminToken } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminSignIn = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,10 +55,6 @@ const AdminSignIn = () => {
         setAdminToken(token);
       }
 
-      // Token is already set via setAdminToken(token) above.
-      // The AuthContext will pick up the token on next render via initAuth.
-      // Navigation will happen automatically via the useEffect that watches isAuthenticated.
-      // Force a page reload to trigger AuthContext re-init with the new token
       window.location.href = '/';
     } catch (err) {
       setError(err?.message || 'Unable to sign in. Please try again.');
@@ -66,51 +64,84 @@ const AdminSignIn = () => {
   };
 
   return (
-    <div style={pageStyle}>
-      <div style={cardStyle}>
-        <h1 style={titleStyle}>Admin Sign In</h1>
-        <p style={subtitleStyle}>Sign in with your admin credentials to access the dashboard.</p>
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>Admin Portal</h1>
+          <p style={styles.subtitle}>Welcome back! Please sign in to continue.</p>
+        </div>
 
         {error && (
-          <div style={errorBoxStyle}>
-            <AlertCircle size={18} />
+          <div style={styles.errorBox}>
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
-          <label style={labelStyle}>
-            Email
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              style={inputStyle}
-              placeholder="admin@example.com"
-              autoComplete="email"
-              required
-            />
-          </label>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Email Address</label>
+            <div style={{
+              ...styles.inputWrapper,
+              borderColor: focusedField === 'email' ? '#2563eb' : '#e2e8f0',
+              boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
+            }}>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+                style={styles.input}
+                placeholder="admin@example.com"
+                autoComplete="email"
+                required
+              />
+            </div>
+          </div>
 
-          <label style={labelStyle}>
-            Password
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              style={inputStyle}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Password</label>
+            <div style={{
+              ...styles.inputWrapper,
+              borderColor: focusedField === 'password' ? '#2563eb' : '#e2e8f0',
+              boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
+            }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+                style={{ ...styles.input, paddingRight: 40 }}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={styles.eyeButton}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-          <button type="submit" disabled={loading} style={buttonStyle}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.submitButton,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
             {loading ? (
               <>
-                <Loader2 size={16} />
+                <Loader2 size={18} style={styles.spinner} />
                 Signing in...
               </>
             ) : (
@@ -123,86 +154,128 @@ const AdminSignIn = () => {
   );
 };
 
-const pageStyle = {
-  minHeight: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'linear-gradient(135deg, #e0f2fe, #e2f6ff, #eff6ff)',
-  padding: 20
+const styles = {
+  page: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+    padding: '20px',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  },
+  card: {
+    width: '100%',
+    maxWidth: '400px',
+    background: '#ffffff',
+    borderRadius: '16px',
+    padding: '40px',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    border: '1px solid rgba(255, 255, 255, 0.5)'
+  },
+  header: {
+    marginBottom: '32px',
+    textAlign: 'center'
+  },
+  title: {
+    margin: '0 0 8px',
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: '-0.025em'
+  },
+  subtitle: {
+    margin: 0,
+    color: '#64748b',
+    fontSize: '14px',
+    lineHeight: '1.5'
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  fieldGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  label: {
+    color: '#334155',
+    fontWeight: '600',
+    fontSize: '14px'
+  },
+  inputWrapper: {
+    position: 'relative',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    background: '#ffffff',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  input: {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '10px',
+    border: 'none',
+    fontSize: '15px',
+    outline: 'none',
+    color: '#1e293b',
+    background: 'transparent'
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    padding: '4px',
+    cursor: 'pointer',
+    color: '#94a3b8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'color 0.2s'
+  },
+  submitButton: {
+    marginTop: '8px',
+    padding: '12px',
+    borderRadius: '10px',
+    border: 'none',
+    background: '#2563eb', // Brand blue
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: '15px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'background-color 0.2s, transform 0.1s',
+    boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
+  },
+  errorBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: '1px solid #fecaca',
+    background: '#fef2f2',
+    color: '#991b1b',
+    fontSize: '13px',
+    marginBottom: '24px',
+    lineHeight: '1.4'
+  },
+  spinner: {
+    animation: 'spin 1s linear infinite'
+  }
 };
 
-const cardStyle = {
-  width: '100%',
-  maxWidth: 420,
-  background: '#fff',
-  borderRadius: 12,
-  padding: 24,
-  boxShadow: '0 14px 45px rgba(15, 23, 42, 0.15)',
-  border: '1px solid #e2e8f0',
-  display: 'grid',
-  gap: 12
-};
-
-const titleStyle = {
-  margin: 0,
-  fontSize: 26,
-  color: '#0f172a'
-};
-
-const subtitleStyle = {
-  margin: '0 0 4px',
-  color: '#475569',
-  fontSize: 14
-};
-
-const labelStyle = {
-  display: 'grid',
-  gap: 6,
-  color: '#0f172a',
-  fontWeight: 600,
-  fontSize: 14
-};
-
-const inputStyle = {
-  padding: '10px 12px',
-  borderRadius: 8,
-  border: '1px solid #cbd5e1',
-  fontSize: 14,
-  outline: 'none',
-  transition: 'border-color 0.2s',
-  fontFamily: 'inherit'
-};
-
-const buttonStyle = {
-  marginTop: 4,
-  padding: '10px 14px',
-  borderRadius: 8,
-  border: 'none',
-  background: '#0ea5e9',
-  color: '#fff',
-  fontWeight: 700,
-  fontSize: 14,
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  justifyContent: 'center',
-  boxShadow: '0 8px 20px rgba(14, 165, 233, 0.35)',
-  transition: 'transform 0.1s, box-shadow 0.1s',
-  opacity: 1
-};
-
-const errorBoxStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '10px 12px',
-  borderRadius: 8,
-  border: '1px solid #fecaca',
-  background: '#fee2e2',
-  color: '#991b1b',
-  fontSize: 14
-};
+// Add global style for spin animation if not present
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+`;
+document.head.appendChild(styleSheet);
 
 export default AdminSignIn;
