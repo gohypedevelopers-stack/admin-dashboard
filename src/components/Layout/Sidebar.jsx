@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, Package,
   Calendar, FileText, ShoppingBag, LogOut, Menu, X, ChevronDown,
-  Settings, MessageSquare
+  Settings, MessageSquare, HandHeart
 } from 'lucide-react';
 import './sidebar.css';
 import { useAuth } from '../../context/AuthContext';
@@ -32,6 +32,7 @@ const Sidebar = () => {
     { icon: ShoppingBag, label: 'Products', path: '/products' },
     { icon: Settings, label: 'Settings', path: '/settings' },
     { icon: MessageSquare, label: 'Support', path: '/support' },
+    { icon: HandHeart, label: 'Give a Service', path: '/give-service' },
   ];
 
   const USER_ROLES = ['All', 'Admin', 'Doctor', 'Patient', 'Pharmacy'];
