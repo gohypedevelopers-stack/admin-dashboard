@@ -17,6 +17,7 @@ import OrderDetails from './pages/Orders/OrderDetails';
 import OrdersPage from './pages/Orders/OrdersPage';
 import VerificationList from './pages/Verification/VerificationList';
 import AppointmentList from './pages/Appointments/AppointmentList';
+import NotificationsPage from './pages/Notifications/NotificationsPage';
 import ContentManager from './pages/Content/ContentManager';
 import PharmacyProducts from './pages/Products/PharmacyProducts';
 import DoctorsVerified from './pages/Doctors/DoctorsVerified';
@@ -73,6 +74,7 @@ const AppLayout = () => {
           <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
           <Route path="/verification" element={<ProtectedRoute><VerificationList /></ProtectedRoute>} />
           <Route path="/appointments" element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/content" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />
           <Route path="/products" element={<ProtectedRoute><PharmacyProducts /></ProtectedRoute>} />
 
