@@ -19,6 +19,7 @@ import VerificationList from './pages/Verification/VerificationList';
 import AppointmentList from './pages/Appointments/AppointmentList';
 import NotificationsPage from './pages/Notifications/NotificationsPage';
 import ContentManager from './pages/Content/ContentManager';
+import HomePageContent from './pages/Content/HomePageContent';
 import PharmacyProducts from './pages/Products/PharmacyProducts';
 import DoctorsVerified from './pages/Doctors/DoctorsVerified';
 import DoctorNewVerification from './pages/Doctors/DoctorNewVerification';
@@ -76,6 +77,7 @@ const AppLayout = () => {
           <Route path="/appointments" element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/content" element={<ProtectedRoute><ContentManager /></ProtectedRoute>} />
+          <Route path="/content/home-app" element={<ProtectedRoute><HomePageContent /></ProtectedRoute>} />
           <Route path="/products" element={<ProtectedRoute><PharmacyProducts /></ProtectedRoute>} />
 
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
