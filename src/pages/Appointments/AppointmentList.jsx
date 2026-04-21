@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Filter, Eye, Calendar, Clock } from 'lucide-react';
+import { Search, Eye, Calendar, Clock, Stethoscope, UserRound, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
 import { appointmentService } from '../../services/appointmentService';
 import AppointmentDetailsModal from '../../components/Appointments/AppointmentDetailsModal';
 import './appointments-page.css';
+import '../../styles/admin-panel.css';
 
 const AppointmentList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,16 @@ const AppointmentList = () => {
       (appt.patientName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [data, searchTerm]);
+
+  const stats = useMemo(() => {
+    const source = data || [];
+    return {
+      total: source.length,
+      pending: source.filter((appt) => (appt.status || 'pending') === 'pending').length,
+      confirmed: source.filter((appt) => (appt.status || '').toLowerCase() === 'confirmed').length,
+      completed: source.filter((appt) => (appt.status || '').toLowerCase() === 'completed').length,
+    };
+  }, [data]);
 
   const handleViewDetails = (appointment) => {
     setSelectedAppointment(appointment);
@@ -45,37 +56,66 @@ const AppointmentList = () => {
   };
 
   return (
-    <div className="appointments-page">
-      <div className="page-header">
+    <div className="admin-panel-page appointments-page">
+      <div className="admin-panel-hero">
         <div>
-          <h1 className="page-title">Appointments</h1>
-          <p className="page-subtitle">Manage and track all patient appointments.</p>
+          <div className="admin-panel-kicker">
+            <ClipboardCheck size={14} />
+            Appointments Desk
+          </div>
+          <h1 className="admin-panel-title">Appointments</h1>
+          <p className="admin-panel-subtitle">Review upcoming consultations, inspect patient-doctor assignments, and keep the booking queue easy to scan.</p>
         </div>
       </div>
 
-      <div className="table-container">
-        <div className="controls-bar">
-          <div className="search-box">
-            <Search size={18} className="search-icon" />
+      <div className="admin-panel-stats">
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">All Bookings</p>
+          <div className="admin-panel-stat-value">{stats.total}</div>
+          <p className="admin-panel-stat-note">Appointments in the system</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Pending</p>
+          <div className="admin-panel-stat-value">{stats.pending}</div>
+          <p className="admin-panel-stat-note">Awaiting confirmation</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Confirmed</p>
+          <div className="admin-panel-stat-value">{stats.confirmed}</div>
+          <p className="admin-panel-stat-note">Scheduled and active</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Completed</p>
+          <div className="admin-panel-stat-value">{stats.completed}</div>
+          <p className="admin-panel-stat-note">Closed successfully</p>
+        </div>
+      </div>
+
+      <div className="admin-panel-card table-container">
+        <div className="admin-panel-toolbar controls-bar">
+          <div className="admin-panel-search search-box">
+            <Search size={18} />
             <input
               type="text"
               placeholder="Search doctor or patient..."
-              className="search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="action-btn">
-            <Filter size={18} />
-          </button>
+          <div className="admin-panel-toolbar-meta">
+            <span className="admin-panel-chip">
+              <CheckCircle2 size={14} />
+              {filteredData.length} results
+            </span>
+          </div>
         </div>
 
         {loading ? (
-          <div className="loading-state">Loading appointments...</div>
+          <div className="admin-panel-empty loading-state">Loading appointments...</div>
         ) : error ? (
-          <div className="error-state">{error}</div>
+          <div className="admin-panel-empty error-state">{error}</div>
         ) : (
-          <table className="appointments-table">
+          <table className="admin-panel-table appointments-table">
             <thead>
               <tr>
                 <th>Doctor</th>
@@ -88,26 +128,36 @@ const AppointmentList = () => {
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="empty-state">No appointments found.</td>
+                  <td colSpan="5" className="admin-panel-empty empty-state">No appointments found.</td>
                 </tr>
               ) : (
                 filteredData.map((appt) => (
                   <tr key={appt._id}>
                     <td>
-                      <div className="doctor-info">
-                        <span className="name">
+                      <div className="admin-panel-entity doctor-info">
+                        <div className="admin-panel-avatar">
+                          <Stethoscope size={18} />
+                        </div>
+                        <div>
+                        <span className="admin-panel-entity-title name">
                           {appt.doctor?.user?.userName || appt.doctorName || 'Unknown Doctor'}
                         </span>
-                        <span className="sub-text">
+                        <span className="admin-panel-entity-subtitle sub-text">
                           {appt.doctor?.specialization || appt.doctorSpecialty || 'General'}
                         </span>
+                        </div>
                       </div>
                     </td>
                     <td>
-                      <div className="patient-info">
-                        <span className="name">
+                      <div className="admin-panel-entity patient-info">
+                        <div className="admin-panel-avatar" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#b45309' }}>
+                          <UserRound size={18} />
+                        </div>
+                        <div>
+                        <span className="admin-panel-entity-title name">
                           {appt.patient?.userName || appt.patientName || 'Unknown Patient'}
                         </span>
+                        </div>
                       </div>
                     </td>
                     <td>
@@ -127,10 +177,10 @@ const AppointmentList = () => {
                     </td>
                     <td>
                       <button
-                        className="btn-view"
+                        className="admin-action-button"
                         onClick={() => handleViewDetails(appt)}
                       >
-                        <Eye size={16} /> View
+                        <Eye size={16} /> View Details
                       </button>
                     </td>
                   </tr>

@@ -1,10 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import { Plus, Search, Filter, Edit2, Trash2, Package, Grid, List, AlertTriangle, TrendingUp, ShoppingBag } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Package,
+  Grid,
+  List,
+  AlertTriangle,
+  TrendingUp,
+  ShoppingBag,
+  Eye,
+  Boxes,
+} from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
 import { pharmacyService } from '../../services/pharmacyService';
 import { pickList } from '../../utils/api';
 import ProductModal from '../../components/Pharmacies/ProductModal';
+import ProductDetailsModal from '../../components/Pharmacies/ProductDetailsModal';
 import './products-page.css';
+import '../../styles/admin-panel.css';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color }) => (
   <div className={`product-stat-card ${color}`}>
@@ -19,7 +34,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color }) => (
   </div>
 );
 
-const ProductCard = ({ product, onEdit, onDelete }) => {
+const ProductCard = ({ product, onView, onEdit, onDelete }) => {
   const isLowStock = product.stock < 10;
   const isOutOfStock = product.stock === 0;
 
@@ -38,12 +53,8 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
             <AlertTriangle size={12} /> Low Stock
           </span>
         )}
-        {isOutOfStock && (
-          <span className="stock-badge danger">Out of Stock</span>
-        )}
-        {product.isPrescriptionRequired && (
-          <span className="rx-badge">Rx</span>
-        )}
+        {isOutOfStock && <span className="stock-badge danger">Out of Stock</span>}
+        {product.isPrescriptionRequired && <span className="rx-badge">Rx</span>}
       </div>
       <div className="product-card-body">
         <span className="product-category-tag">{product.category || 'Uncategorized'}</span>
@@ -55,6 +66,9 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
             <span className="product-stock">{product.stock || 0} in stock</span>
           </div>
           <div className="product-actions">
+            <button className="icon-btn" onClick={() => onView(product)} title="View">
+              <Eye size={16} />
+            </button>
             <button className="icon-btn edit" onClick={() => onEdit(product)} title="Edit">
               <Edit2 size={16} />
             </button>
@@ -71,9 +85,10 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
 const PharmacyProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [viewProduct, setViewProduct] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, error } = useApiData(async () => {
@@ -81,25 +96,23 @@ const PharmacyProducts = () => {
     return pickList(payload);
   }, [refreshKey]);
 
-  // Calculate stats
   const stats = useMemo(() => {
     if (!data) return { total: 0, lowStock: 0, outOfStock: 0, totalValue: 0 };
-    const lowStock = data.filter(p => p.stock < 10 && p.stock > 0).length;
-    const outOfStock = data.filter(p => p.stock === 0).length;
+    const lowStock = data.filter((p) => p.stock < 10 && p.stock > 0).length;
+    const outOfStock = data.filter((p) => p.stock === 0).length;
     const totalValue = data.reduce((sum, p) => sum + (p.price || 0) * (p.stock || 0), 0);
     return { total: data.length, lowStock, outOfStock, totalValue };
   }, [data]);
 
-  // Get unique categories
   const categories = useMemo(() => {
     if (!data) return ['All'];
-    const cats = [...new Set(data.map(p => p.category).filter(Boolean))];
+    const cats = [...new Set(data.map((p) => p.category).filter(Boolean))];
     return ['All', ...cats.sort()];
   }, [data]);
 
   const filteredData = useMemo(() => {
     if (!data) return [];
-    return data.filter(product => {
+    return data.filter((product) => {
       const matchesSearch =
         (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.brand || product.manufacturer || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -118,15 +131,18 @@ const PharmacyProducts = () => {
     setIsModalOpen(true);
   };
 
+  const handleViewProduct = (product) => {
+    setViewProduct(product);
+  };
+
   const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await pharmacyService.deleteProduct(productId);
-        setRefreshKey(prev => prev + 1);
-      } catch (err) {
-        console.error('Failed to delete product:', err);
-        alert('Failed to delete product');
-      }
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await pharmacyService.deleteProduct(productId);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert('Failed to delete product');
     }
   };
 
@@ -137,56 +153,35 @@ const PharmacyProducts = () => {
 
   const handleModalSuccess = () => {
     handleModalClose();
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
-    <div className="products-page-v2">
-      {/* Page Header */}
-      <div className="page-header-v2">
+    <div className="products-page-v2 admin-panel-page">
+      <div className="page-header-v2 admin-panel-hero">
         <div>
-          <h1 className="page-title-v2">Product Inventory</h1>
-          <p className="page-subtitle-v2">Manage all pharmacy products, stock levels, and pricing</p>
+          <div className="admin-panel-kicker">
+            <Boxes size={14} />
+            Inventory Console
+          </div>
+          <h1 className="page-title-v2 admin-panel-title">Product Inventory</h1>
+          <p className="page-subtitle-v2 admin-panel-subtitle">
+            Manage all pharmacy products, preview details quickly, and keep stock and image updates in one cleaner workflow.
+          </p>
         </div>
-        <button className="btn-primary-v2" onClick={handleAddProduct}>
+        <button className="btn-primary-v2 admin-panel-action" onClick={handleAddProduct}>
           <Plus size={20} />
           Add Product
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="stats-row">
-        <StatCard
-          title="Total Products"
-          value={stats.total.toLocaleString()}
-          subtitle="In inventory"
-          icon={Package}
-          color="blue"
-        />
-        <StatCard
-          title="Low Stock"
-          value={stats.lowStock}
-          subtitle="Need restocking"
-          icon={AlertTriangle}
-          color="amber"
-        />
-        <StatCard
-          title="Out of Stock"
-          value={stats.outOfStock}
-          subtitle="Unavailable"
-          icon={ShoppingBag}
-          color="red"
-        />
-        <StatCard
-          title="Inventory Value"
-          value={`₹${stats.totalValue.toLocaleString()}`}
-          subtitle="Total stock value"
-          icon={TrendingUp}
-          color="green"
-        />
+        <StatCard title="Total Products" value={stats.total.toLocaleString()} subtitle="In inventory" icon={Package} color="blue" />
+        <StatCard title="Low Stock" value={stats.lowStock} subtitle="Need restocking" icon={AlertTriangle} color="amber" />
+        <StatCard title="Out of Stock" value={stats.outOfStock} subtitle="Unavailable" icon={ShoppingBag} color="red" />
+        <StatCard title="Inventory Value" value={`₹${stats.totalValue.toLocaleString()}`} subtitle="Total stock value" icon={TrendingUp} color="green" />
       </div>
 
-      {/* Controls Bar */}
       <div className="controls-bar-v2">
         <div className="search-box-v2">
           <Search size={18} className="search-icon" />
@@ -199,42 +194,28 @@ const PharmacyProducts = () => {
         </div>
 
         <div className="filter-controls">
-          <select
-            className="category-select"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            {categories.map(cat => (
+          <select className="category-select" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+            {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
 
           <div className="view-toggle">
-            <button
-              className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Grid View"
-            >
+            <button className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')} title="Grid View">
               <Grid size={18} />
             </button>
-            <button
-              className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="List View"
-            >
+            <button className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="List View">
               <List size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Results Count */}
       <p className="results-count">
         Showing <strong>{filteredData.length}</strong> of <strong>{data?.length || 0}</strong> products
         {selectedCategory !== 'All' && <span> in <strong>{selectedCategory}</strong></span>}
       </p>
 
-      {/* Content */}
       {loading ? (
         <div className="loading-state-v2">
           <div className="spinner"></div>
@@ -254,6 +235,7 @@ const PharmacyProducts = () => {
             <ProductCard
               key={product._id}
               product={product}
+              onView={handleViewProduct}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
             />
@@ -304,6 +286,9 @@ const PharmacyProducts = () => {
                   </td>
                   <td>
                     <div className="actions-cell-v2">
+                      <button className="icon-btn" onClick={() => handleViewProduct(product)}>
+                        <Eye size={16} />
+                      </button>
                       <button className="icon-btn edit" onClick={() => handleEditProduct(product)}>
                         <Edit2 size={16} />
                       </button>
@@ -319,15 +304,10 @@ const PharmacyProducts = () => {
         </div>
       )}
 
-      <ProductModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSuccess={handleModalSuccess}
-        product={selectedProduct}
-      />
+      <ProductModal isOpen={isModalOpen} onClose={handleModalClose} onSuccess={handleModalSuccess} product={selectedProduct} />
+      <ProductDetailsModal product={viewProduct} onClose={() => setViewProduct(null)} />
     </div>
   );
 };
 
 export default PharmacyProducts;
-

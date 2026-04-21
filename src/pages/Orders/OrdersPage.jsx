@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Trash2, Edit2, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Search, Trash2, Edit2, Eye, PackageCheck, Truck, BadgeIndianRupee, ClipboardList } from 'lucide-react';
 import { pickList } from '../../utils/api';
 import { useApiData } from '../../hooks/useApiData';
 import { pharmacyService } from '../../services/pharmacyService';
 import './orders-page.css';
+import '../../styles/admin-panel.css';
 
 const formatPrice = (value) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
@@ -41,6 +42,16 @@ const OrdersPage = () => {
       item._id?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [data, searchTerm]);
+
+  const stats = useMemo(() => {
+    const source = data || [];
+    return {
+      total: source.length,
+      pending: source.filter((item) => (item.status || 'pending') === 'pending').length,
+      delivered: source.filter((item) => (item.status || '').toLowerCase() === 'delivered').length,
+      revenue: source.reduce((sum, item) => sum + Number(item.totalAmount ?? item.grandTotal ?? 0), 0),
+    };
+  }, [data]);
 
   const clearMessages = () => {
     setActionMessage('');
@@ -79,11 +90,38 @@ const OrdersPage = () => {
   };
 
   return (
-    <div className="orders-page">
-      <div className="page-header">
+    <div className="admin-panel-page orders-page">
+      <div className="admin-panel-hero">
         <div>
-          <h1 className="page-title">Orders Management</h1>
-          <p className="page-subtitle">Track and manage customer orders.</p>
+          <div className="admin-panel-kicker">
+            <ClipboardList size={14} />
+            Orders Control
+          </div>
+          <h1 className="admin-panel-title">Orders Management</h1>
+          <p className="admin-panel-subtitle">Track customer orders, jump into details quickly, and update delivery status without leaving the page.</p>
+        </div>
+      </div>
+
+      <div className="admin-panel-stats">
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Total Orders</p>
+          <div className="admin-panel-stat-value">{stats.total}</div>
+          <p className="admin-panel-stat-note">Across all pharmacies</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Pending</p>
+          <div className="admin-panel-stat-value">{stats.pending}</div>
+          <p className="admin-panel-stat-note">Needs action from operations</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Delivered</p>
+          <div className="admin-panel-stat-value">{stats.delivered}</div>
+          <p className="admin-panel-stat-note">Closed successfully</p>
+        </div>
+        <div className="admin-panel-stat">
+          <p className="admin-panel-stat-label">Revenue</p>
+          <div className="admin-panel-stat-value">₹{Math.round(stats.revenue).toLocaleString()}</div>
+          <p className="admin-panel-stat-note">Visible order value</p>
         </div>
       </div>
 
@@ -93,29 +131,31 @@ const OrdersPage = () => {
         </div>
       )}
 
-      <div className="table-container">
-        <div className="controls-bar">
-          <div className="search-box">
-            <Search size={18} className="search-icon" />
+      <div className="admin-panel-card table-container">
+        <div className="admin-panel-toolbar controls-bar">
+          <div className="admin-panel-search search-box">
+            <Search size={18} />
             <input
               type="text"
               placeholder="Search orders..."
-              className="search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="action-btn">
-            <Filter size={18} />
-          </button>
+          <div className="admin-panel-toolbar-meta">
+            <span className="admin-panel-chip">
+              <PackageCheck size={14} />
+              {filteredData.length} visible
+            </span>
+          </div>
         </div>
 
         {loading ? (
-          <div className="loading-state">Loading orders...</div>
+          <div className="admin-panel-empty loading-state">Loading orders...</div>
         ) : error ? (
-          <div className="error-state">{error}</div>
+          <div className="admin-panel-empty error-state">{error}</div>
         ) : (
-          <table className="orders-table">
+          <table className="admin-panel-table orders-table">
             <thead>
               <tr>
                 <th>Order ID</th>
@@ -130,7 +170,7 @@ const OrdersPage = () => {
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="empty-state">No orders found.</td>
+                  <td colSpan="7" className="admin-panel-empty empty-state">No orders found.</td>
                 </tr>
               ) : (
                 filteredData.map((order) => (
@@ -139,9 +179,14 @@ const OrdersPage = () => {
                       <span className="order-id">#{order.orderNumber || order._id.slice(-6)}</span>
                     </td>
                     <td>
-                      <div className="customer-info">
-                        <span className="customer-name">{order.user?.userName || 'Guest'}</span>
-                        <span className="customer-email">{order.user?.email || '-'}</span>
+                      <div className="admin-panel-entity customer-info">
+                        <div className="admin-panel-avatar">
+                          {(order.user?.userName || 'G').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="admin-panel-entity-title customer-name">{order.user?.userName || 'Guest'}</span>
+                          <span className="admin-panel-entity-subtitle customer-email">{order.user?.email || '-'}</span>
+                        </div>
                       </div>
                     </td>
                     <td>{formatDate(order.createdAt)}</td>
@@ -157,30 +202,33 @@ const OrdersPage = () => {
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="admin-panel-actions">
                         <button
-                          className="action-btn"
+                          className="admin-action-button"
                           onClick={() => navigate(`/orders/${order._id}`)}
                           title="View Details"
                         >
-                          <Eye size={18} />
+                          <Eye size={16} />
+                          View
                         </button>
                         <button
-                          className="action-btn"
+                          className="admin-action-button secondary"
                           onClick={() => {
                             setSelectedOrder(order._id);
                             setStatusValue(order.status || 'pending');
                           }}
                           title="Update Status"
                         >
-                          <Edit2 size={18} />
+                          <Edit2 size={16} />
+                          Edit
                         </button>
                         <button
-                          className="action-btn delete"
+                          className="admin-action-button danger"
                           onClick={() => handleDeleteOrder(order._id)}
                           title="Delete Order"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -193,7 +241,7 @@ const OrdersPage = () => {
       </div>
 
       {selectedOrder && (
-        <div className="bulk-actions-bar">
+        <div className="admin-panel-drawer bulk-actions-bar">
           <div className="bulk-header">Update Status for Selected Order</div>
           <div className="bulk-controls">
             <select
