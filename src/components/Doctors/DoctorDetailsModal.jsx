@@ -1,8 +1,8 @@
 import React from 'react';
-import { X, User, Mail, Phone, MapPin, Award, FileText, Calendar, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { X, User, Award, FileText } from 'lucide-react';
 import { API_BASE_URL } from '../../utils/api';
 
-const DoctorDetailsModal = ({ doctor, onClose }) => {
+const DoctorDetailsModal = ({ doctor, onClose, showDocuments = false }) => {
   if (!doctor) return null;
 
   // Helper to safely access nested properties
@@ -24,20 +24,24 @@ const DoctorDetailsModal = ({ doctor, onClose }) => {
   const qualifications = d.qualifications || {};
   const identity = d.identity || {};
 
-  const getFileUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
+  const getFileUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === 'object') {
+      return getFileUrl(value.url || value.path);
+    }
+    if (typeof value !== 'string') return null;
+    if (value.startsWith('http')) return value;
     // Remove leading slash if present to avoid double slashes
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    const cleanPath = value.startsWith('/') ? value.slice(1) : value;
     return `${API_BASE_URL}/${cleanPath}`;
   };
 
   const files = {
-    mbbs: getFileUrl(qualifications.mbbsCertificate?.path || d.mbbsCertificate),
-    mdMs: getFileUrl(qualifications.mdMsBdsCertificate?.path || d.mdMsBdsCertificate),
-    reg: getFileUrl(registration.registrationCertificate?.path || d.registrationCertificate),
-    govt: getFileUrl(identity.governmentId?.path || d.governmentId),
-    selfie: getFileUrl(d.selfieVerification?.selfie?.path || d.selfie)
+    mbbs: getFileUrl(qualifications.mbbsCertificate || d.mbbsCertificate),
+    mdMs: getFileUrl(qualifications.mdMsBdsCertificate || d.mdMsBdsCertificate),
+    reg: getFileUrl(registration.registrationCertificate || d.registrationCertificate),
+    govt: getFileUrl(identity.governmentId || d.governmentId),
+    selfie: getFileUrl(d.selfieVerification?.selfie || d.selfie)
   };
 
   // Fallback for Doctor object structure (if different from Verification)
@@ -124,17 +128,18 @@ const DoctorDetailsModal = ({ doctor, onClose }) => {
               </div>
             </div>
 
-            {/* Documents */}
-            <div className="detail-section full-width">
-              <h4><FileText size={16} /> Documents</h4>
-              <div className="files-grid">
-                <FileItem label="MBBS Certificate" url={files.mbbs} />
-                <FileItem label="MD/MS/BDS Cert" url={files.mdMs} />
-                <FileItem label="Registration Cert" url={files.reg} />
-                <FileItem label="Government ID" url={files.govt} />
-                <FileItem label="Selfie" url={files.selfie} />
+            {showDocuments && (
+              <div className="detail-section full-width">
+                <h4><FileText size={16} /> Documents</h4>
+                <div className="files-grid">
+                  <FileItem label="MBBS Certificate" url={files.mbbs} />
+                  <FileItem label="MD/MS/BDS Cert" url={files.mdMs} />
+                  <FileItem label="Registration Cert" url={files.reg} />
+                  <FileItem label="Government ID" url={files.govt} />
+                  <FileItem label="Selfie" url={files.selfie} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

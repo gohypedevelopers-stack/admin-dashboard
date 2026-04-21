@@ -20,6 +20,14 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString();
 };
 
+const resolveFileUrl = (value) => {
+  if (!value) return null;
+  if (typeof value === 'object') {
+    return value.url || value.path || null;
+  }
+  return value;
+};
+
 const normalizeVerification = (item, idx) => ({
   id: item._id || item.id || idx + 1,
   doctorId: item.doctor?._id || item.doctor || '-',
@@ -39,11 +47,11 @@ const normalizeVerification = (item, idx) => ({
   status: item.status || 'pending',
   submitted: formatDate(item.createdAt || item.submitted),
   files: {
-    mbbsCertificate: item.qualifications?.mbbsCertificate?.path || item.mbbsCertificate,
-    mdMsBdsCertificate: item.qualifications?.mdMsBdsCertificate?.path || item.mdMsBdsCertificate,
-    registrationCertificate: item.registration?.registrationCertificate?.path || item.registrationCertificate,
-    governmentId: item.identity?.governmentId?.path || item.governmentId,
-    selfie: item.selfieVerification?.selfie?.path || item.selfie
+    mbbsCertificate: resolveFileUrl(item.qualifications?.mbbsCertificate || item.mbbsCertificate),
+    mdMsBdsCertificate: resolveFileUrl(item.qualifications?.mdMsBdsCertificate || item.mdMsBdsCertificate),
+    registrationCertificate: resolveFileUrl(item.registration?.registrationCertificate || item.registrationCertificate),
+    governmentId: resolveFileUrl(item.identity?.governmentId || item.governmentId),
+    selfie: resolveFileUrl(item.selfieVerification?.selfie || item.selfie)
   }
 });
 

@@ -7,6 +7,12 @@ import {
 import { apiRequest } from '../../utils/api';
 import './pharmacies-page.css';
 
+const resolveImageUrl = (image) => {
+    if (!image) return null;
+    if (typeof image === 'string') return image;
+    return image.url || image.path || null;
+};
+
 const PharmacyDetails = () => {
     const { pharmacyId } = useParams();
     const navigate = useNavigate();
@@ -178,7 +184,7 @@ const PharmacyDetails = () => {
                                         <tr key={p._id}>
                                             <td>
                                                 <div className="product-cell-sm">
-                                                    {p.images?.[0] && <img src={p.images[0]} alt="" className="thumb" />}
+                                                    {resolveImageUrl(p.images?.[0]) && <img src={resolveImageUrl(p.images?.[0])} alt="" className="thumb" />}
                                                     <span>{p.name}</span>
                                                 </div>
                                             </td>

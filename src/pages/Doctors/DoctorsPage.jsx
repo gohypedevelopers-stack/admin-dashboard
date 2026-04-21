@@ -18,6 +18,7 @@ const DoctorsPage = () => {
   const itemsPerPage = 10;
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
 
   // Modal State
   const [viewDoctor, setViewDoctor] = useState(null);
@@ -84,6 +85,35 @@ const DoctorsPage = () => {
 
   const handleUpdate = () => {
     setReloadTrigger(prev => prev + 1);
+  };
+
+  const handleViewDoctor = async (doctorId) => {
+    try {
+      setViewLoading(true);
+      const payload = await doctorService.getDoctorById(doctorId);
+      const doctor = payload?.data?.doctor;
+      const verification = payload?.data?.verification;
+
+      if (!doctor) {
+        throw new Error('Doctor details not found');
+      }
+
+      setViewDoctor({
+        ...doctor,
+        ...(verification || {}),
+        id: doctor._id,
+        name: doctor.user?.userName || doctor.name || 'Unknown',
+        email: doctor.user?.email || doctor.email || 'Unknown',
+        specialization: doctor.specialization || verification?.personalDetails?.medicalSpecialization || '-',
+        city: doctor.city || verification?.personalDetails?.city || '-',
+        status: doctor.isActive ? 'Active' : 'Inactive',
+        isActive: doctor.isActive,
+      });
+    } catch (err) {
+      alert(err?.message || 'Unable to load doctor details');
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const getInitials = (name) => {
@@ -196,7 +226,8 @@ const DoctorsPage = () => {
                         <button
                           className="action-btn"
                           title="View Details"
-                          onClick={() => setViewDoctor(doc)}
+                          onClick={() => handleViewDoctor(doc.id)}
+                          disabled={viewLoading}
                         >
                           <Eye size={16} />
                         </button>
@@ -245,6 +276,7 @@ const DoctorsPage = () => {
         <DoctorDetailsModal
           doctor={viewDoctor}
           onClose={() => setViewDoctor(null)}
+          showDocuments
         />
       )}
 

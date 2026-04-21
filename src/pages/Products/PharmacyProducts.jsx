@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus, Search, Filter, Edit2, Trash2, Package, Grid, List, AlertTriangle, TrendingUp, ShoppingBag } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
 import { pharmacyService } from '../../services/pharmacyService';
+import { pickList } from '../../utils/api';
 import ProductModal from '../../components/Pharmacies/ProductModal';
 import './products-page.css';
 
@@ -77,7 +78,7 @@ const PharmacyProducts = () => {
 
   const { data, loading, error } = useApiData(async () => {
     const payload = await pharmacyService.getAllProducts();
-    return Array.isArray(payload?.data) ? payload.data : [];
+    return pickList(payload);
   }, [refreshKey]);
 
   // Calculate stats
@@ -322,7 +323,7 @@ const PharmacyProducts = () => {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
-        productToEdit={selectedProduct}
+        product={selectedProduct}
       />
     </div>
   );

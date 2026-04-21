@@ -36,8 +36,10 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   let finalBody = body;
-  if (body && !(body instanceof FormData) && !isJsonContentType(finalHeaders)) {
-    finalHeaders['Content-Type'] = 'application/json';
+  if (body && !(body instanceof FormData)) {
+    if (!isJsonContentType(finalHeaders)) {
+      finalHeaders['Content-Type'] = 'application/json';
+    }
     finalBody = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
