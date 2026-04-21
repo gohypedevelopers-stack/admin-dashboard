@@ -15,6 +15,8 @@ const Sidebar = () => {
   const [selectedUserStatus, setSelectedUserStatus] = useState('All');
   const [openDoctorsSubmenu, setOpenDoctorsSubmenu] = useState(false);
   const [selectedDoctorView, setSelectedDoctorView] = useState('Overview');
+  const [openPharmaciesSubmenu, setOpenPharmaciesSubmenu] = useState(false);
+  const [selectedPharmacyView, setSelectedPharmacyView] = useState('Overview');
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -25,7 +27,7 @@ const Sidebar = () => {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: Users, label: 'Users', path: '/users', hasSubmenu: true },
     { icon: Stethoscope, label: 'Doctors', path: '/doctors', hasSubmenu: true },
-    { icon: Package, label: 'Pharmacies', path: '/pharmacies' },
+    { icon: Package, label: 'Pharmacies', path: '/pharmacies', hasSubmenu: true },
     { icon: ShoppingBag, label: 'Orders', path: '/orders' },
     { icon: Calendar, label: 'Appointments', path: '/appointments' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
@@ -50,6 +52,16 @@ const Sidebar = () => {
     'Revenue',
     'Doorstep Services',
   ];
+  const PHARMACY_VIEWS = [
+    'Overview',
+    'Verified',
+    'New Verification',
+    'Status',
+    'Top Pharmacies',
+    'Revenue',
+    'Products',
+    'Orders',
+  ];
 
   const doctorViewPaths = {
     Overview: '/doctors',
@@ -62,6 +74,16 @@ const Sidebar = () => {
     Revenue: '/doctors/revenue',
     'Doorstep Services': '/doctors/services',
   };
+  const pharmacyViewPaths = {
+    Overview: '/pharmacies',
+    Verified: '/pharmacies/verified',
+    'New Verification': '/pharmacies/new-verification',
+    Status: '/pharmacies/status',
+    'Top Pharmacies': '/pharmacies/top',
+    Revenue: '/pharmacies/revenue',
+    Products: '/products',
+    Orders: '/orders',
+  };
   const userRolePaths = {
     All: '/users',
     Admin: '/users/admin',
@@ -70,7 +92,8 @@ const Sidebar = () => {
     Pharmacy: '/users/pharmacy'
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) =>
+    location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`));
 
   const handleUserFilterSelect = (role, status) => {
     setSelectedUserRole(role);
@@ -87,12 +110,23 @@ const Sidebar = () => {
     setIsOpen(false);
   };
 
+  const handlePharmacySelect = (view) => {
+    setSelectedPharmacyView(view);
+    navigate(pharmacyViewPaths[view] || '/pharmacies');
+    setIsOpen(false);
+  };
+
   useEffect(() => {
     const path = location.pathname;
     const matched = Object.entries(doctorViewPaths).find(([, p]) => p === path);
     if (matched) {
       setOpenDoctorsSubmenu(true);
       setSelectedDoctorView(matched[0]);
+    }
+    const matchedPharmacy = Object.entries(pharmacyViewPaths).find(([, p]) => p === path);
+    if (matchedPharmacy) {
+      setOpenPharmaciesSubmenu(true);
+      setSelectedPharmacyView(matchedPharmacy[0]);
     }
     const matchedUser = Object.entries(userRolePaths).find(([, p]) => p === path);
     if (matchedUser) {
@@ -211,6 +245,46 @@ const Sidebar = () => {
                               key={view}
                               className={`submenu-item ${selectedDoctorView === view ? 'active' : ''}`}
                               onClick={() => handleDoctorSelect(view)}
+                            >
+                              {view}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            if (item.hasSubmenu && item.label === 'Pharmacies') {
+              return (
+                <div key={item.path} className="nav-group">
+                  <button
+                    type="button"
+                    className={`nav-link nav-link-toggle ${isActive(item.path) ? 'active' : ''}`}
+                    onClick={() => {
+                      setOpenPharmaciesSubmenu(!openPharmaciesSubmenu);
+                      navigate(item.path);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <div className="nav-link-main">
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                    </div>
+                    <ChevronDown size={16} className={`chevron ${openPharmaciesSubmenu ? 'open' : ''}`} />
+                  </button>
+
+                  {openPharmaciesSubmenu && (
+                    <div className="submenu">
+                      <div className="submenu-section">
+                        <p className="submenu-title">Pharmacies</p>
+                        <div className="submenu-list doctors-list">
+                          {PHARMACY_VIEWS.map((view) => (
+                            <button
+                              key={view}
+                              className={`submenu-item ${selectedPharmacyView === view ? 'active' : ''}`}
+                              onClick={() => handlePharmacySelect(view)}
                             >
                               {view}
                             </button>

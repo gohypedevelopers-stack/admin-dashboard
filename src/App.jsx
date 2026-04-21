@@ -29,6 +29,11 @@ import DoctorTodayBooked from './pages/Doctors/DoctorTodayBooked';
 import DoctorTop from './pages/Doctors/DoctorTop';
 import DoctorRevenue from './pages/Doctors/DoctorRevenue';
 import DoctorServices from './pages/Doctors/DoctorServices';
+import PharmaciesVerified from './pages/Pharmacies/PharmaciesVerified';
+import PharmaciesNewVerification from './pages/Pharmacies/PharmaciesNewVerification';
+import PharmaciesStatus from './pages/Pharmacies/PharmaciesStatus';
+import PharmaciesTop from './pages/Pharmacies/PharmaciesTop';
+import PharmaciesRevenue from './pages/Pharmacies/PharmaciesRevenue';
 
 import AdminSignIn from './pages/Auth/AdminSignIn';
 import SettingsPage from './pages/Settings/SettingsPage';
@@ -70,6 +75,11 @@ const AppLayout = () => {
           <Route path="/doctors/revenue" element={<ProtectedRoute><DoctorRevenue /></ProtectedRoute>} />
           <Route path="/doctors/services" element={<ProtectedRoute><DoctorServices /></ProtectedRoute>} />
           <Route path="/pharmacies" element={<ProtectedRoute><PharmaciesPage /></ProtectedRoute>} />
+          <Route path="/pharmacies/verified" element={<ProtectedRoute><PharmaciesVerified /></ProtectedRoute>} />
+          <Route path="/pharmacies/new-verification" element={<ProtectedRoute><PharmaciesNewVerification /></ProtectedRoute>} />
+          <Route path="/pharmacies/status" element={<ProtectedRoute><PharmaciesStatus /></ProtectedRoute>} />
+          <Route path="/pharmacies/top" element={<ProtectedRoute><PharmaciesTop /></ProtectedRoute>} />
+          <Route path="/pharmacies/revenue" element={<ProtectedRoute><PharmaciesRevenue /></ProtectedRoute>} />
           <Route path="/pharmacies/:pharmacyId" element={<ProtectedRoute><PharmacyDetails /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
           <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />

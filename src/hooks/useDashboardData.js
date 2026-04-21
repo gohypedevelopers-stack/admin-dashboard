@@ -8,7 +8,7 @@ const DASHBOARD_ENDPOINTS = {
   // Pharmacy endpoints
   pharmacyOrders: '/api/admin/pharmacy/orders',
   pharmacyProducts: '/api/admin/pharmacy/products',
-  pharmacyUsers: '/api/admin/users?role=pharmacy',
+  pharmacies: '/api/admin/pharmacies',
 };
 
 export const useDashboardData = () => {
@@ -50,13 +50,13 @@ export const useDashboardData = () => {
     setError('');
 
     try {
-      const [overviewRes, verifsRes, topDoctorsRes, ordersRes, productsRes, pharmacyUsersRes] = await Promise.all([
+      const [overviewRes, verifsRes, topDoctorsRes, ordersRes, productsRes, pharmaciesRes] = await Promise.all([
         apiRequest(DASHBOARD_ENDPOINTS.overview),
         apiRequest(DASHBOARD_ENDPOINTS.verifications),
         apiRequest(DASHBOARD_ENDPOINTS.topDoctors),
         apiRequest(DASHBOARD_ENDPOINTS.pharmacyOrders).catch(() => ({ data: { items: [] } })),
         apiRequest(DASHBOARD_ENDPOINTS.pharmacyProducts).catch(() => ({ data: { items: [] } })),
-        apiRequest(DASHBOARD_ENDPOINTS.pharmacyUsers).catch(() => ({ data: { users: [] } })),
+        apiRequest(DASHBOARD_ENDPOINTS.pharmacies).catch(() => ({ data: [] })),
       ]);
 
       if (!isMounted.current) return;
@@ -66,14 +66,14 @@ export const useDashboardData = () => {
       setTopDoctorsByAppointments(topDoctorsRes?.data?.byAppointments ?? []);
       setTopDoctorsByRevenue(topDoctorsRes?.data?.byRevenue ?? []);
 
-      // Process pharmacy users
-      const pharmacyUsers = pharmacyUsersRes?.data?.users ?? [];
-      const activePharmacies = pharmacyUsers.filter(p => p.status === 'active' || !p.status).length;
-      const pendingPharmacies = pharmacyUsers.filter(p => p.status === 'pending').length;
-      const suspendedPharmacies = pharmacyUsers.filter(p => p.status === 'suspended').length;
+      // Process pharmacies from the real pharmacy admin endpoint
+      const pharmacyUsers = Array.isArray(pharmaciesRes?.data) ? pharmaciesRes.data : [];
+      const activePharmacies = pharmacyUsers.filter((p) => p.status === 'active').length;
+      const pendingPharmacies = pharmacyUsers.filter((p) => p.status === 'pending').length;
+      const suspendedPharmacies = pharmacyUsers.filter((p) => p.status === 'suspended').length;
       setPharmacyStats({
         total: pharmacyUsers.length,
-        active: activePharmacies || pharmacyUsers.length,
+        active: activePharmacies,
         pending: pendingPharmacies,
         suspended: suspendedPharmacies,
       });
