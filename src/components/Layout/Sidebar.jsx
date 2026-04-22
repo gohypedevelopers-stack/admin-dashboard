@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, Package,
   Calendar, FileText, ShoppingBag, LogOut, Menu, X, ChevronDown,
-  Settings, MessageSquare, HandHeart, Bell, House
+  Settings, MessageSquare, HandHeart, Bell, House, BadgePlus
 } from 'lucide-react';
 import './sidebar.css';
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +27,7 @@ const Sidebar = () => {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: Users, label: 'Users', path: '/users', hasSubmenu: true },
     { icon: Stethoscope, label: 'Doctors', path: '/doctors', hasSubmenu: true },
+    { icon: BadgePlus, label: 'Nurses', path: '/nurses' },
     { icon: Package, label: 'Pharmacies', path: '/pharmacies', hasSubmenu: true },
     { icon: ShoppingBag, label: 'Orders', path: '/orders' },
     { icon: Calendar, label: 'Appointments', path: '/appointments' },
@@ -39,7 +40,7 @@ const Sidebar = () => {
     { icon: HandHeart, label: 'Give a Service', path: '/give-service' },
   ];
 
-  const USER_ROLES = ['All', 'Admin', 'Doctor', 'Patient', 'Pharmacy'];
+  const USER_ROLES = ['All', 'Admin', 'Doctor', 'Nurse', 'Patient', 'Pharmacy'];
   const ACCOUNT_STATUS = ['All', 'Active', 'Suspended'];
   const DOCTOR_VIEWS = [
     'Overview',
@@ -88,6 +89,7 @@ const Sidebar = () => {
     All: '/users',
     Admin: '/users/admin',
     Doctor: '/users/doctor',
+    Nurse: '/users/nurse',
     Patient: '/users/patient',
     Pharmacy: '/users/pharmacy'
   };

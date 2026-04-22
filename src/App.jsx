@@ -10,8 +10,10 @@ import UsersAdmin from './pages/Users/UsersAdmin';
 import UsersDoctor from './pages/Users/UsersDoctor';
 import UsersPatient from './pages/Users/UsersPatient';
 import UsersPharmacy from './pages/Users/UsersPharmacy';
+import UsersNurse from './pages/Users/UsersNurse';
 import DoctorsPage from './pages/Doctors/DoctorsPage';
 import PharmaciesPage from './pages/Pharmacies/PharmaciesPage';
+import NursesPage from './pages/Nurses/NursesPage';
 import PharmacyDetails from './pages/Pharmacies/PharmacyDetails';
 import OrderDetails from './pages/Orders/OrderDetails';
 import OrdersPage from './pages/Orders/OrdersPage';
@@ -65,7 +67,9 @@ const AppLayout = () => {
           <Route path="/users/doctor" element={<ProtectedRoute><UsersDoctor /></ProtectedRoute>} />
           <Route path="/users/patient" element={<ProtectedRoute><UsersPatient /></ProtectedRoute>} />
           <Route path="/users/pharmacy" element={<ProtectedRoute><UsersPharmacy /></ProtectedRoute>} />
+          <Route path="/users/nurse" element={<ProtectedRoute><UsersNurse /></ProtectedRoute>} />
           <Route path="/doctors" element={<ProtectedRoute><DoctorsPage /></ProtectedRoute>} />
+          <Route path="/nurses" element={<ProtectedRoute><NursesPage /></ProtectedRoute>} />
           <Route path="/doctors/verified" element={<ProtectedRoute><DoctorsVerified /></ProtectedRoute>} />
           <Route path="/doctors/new-verification" element={<ProtectedRoute><DoctorNewVerification /></ProtectedRoute>} />
           <Route path="/doctors/status" element={<ProtectedRoute><DoctorStatus /></ProtectedRoute>} />
