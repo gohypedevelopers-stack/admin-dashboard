@@ -33,15 +33,26 @@ export const usePharmacyAdminData = () => {
     load();
   }, [load]);
 
-  const updateStatus = useCallback(async (pharmacyId, status) => {
+  const updateStatus = useCallback(async (pharmacyId, status, reason = '') => {
     setActionLoading(pharmacyId);
     try {
-      await apiRequest(`/api/admin/pharmacies/${pharmacyId}/status`, {
+      const response = await apiRequest(`/api/admin/pharmacies/${pharmacyId}/status`, {
         method: 'PATCH',
-        body: { status },
+        body: { status, reason },
       });
+      const updated = response?.data || {};
       setPharmacies((prev) =>
-        prev.map((item) => (item._id === pharmacyId ? { ...item, status } : item))
+        prev.map((item) =>
+          item._id === pharmacyId
+            ? {
+                ...item,
+                status: updated.status || status,
+                statusReason:
+                  typeof updated.statusReason === 'string' ? updated.statusReason : reason,
+                statusHistory: updated.statusHistory || item.statusHistory,
+              }
+            : item
+        )
       );
     } finally {
       setActionLoading('');
@@ -57,6 +68,7 @@ export const usePharmacyAdminData = () => {
         pharmacyId: String(item._id),
         name: item.storeName || item.ownerName || 'Unnamed Pharmacy',
         status: item.status || 'pending',
+        statusReason: item.statusReason || '',
         createdAt: item.createdAt,
         orders: 0,
         revenue: 0,
@@ -81,6 +93,7 @@ export const usePharmacyAdminData = () => {
             fallback?.ownerName ||
             `Pharmacy #${key.slice(-6)}`,
           status: fallback?.status || 'unknown',
+          statusReason: fallback?.statusReason || '',
           createdAt: fallback?.createdAt,
           orders: 0,
           revenue: 0,
@@ -114,6 +127,7 @@ export const usePharmacyAdminData = () => {
           pharmacyId: key,
           name: fallback?.storeName || fallback?.ownerName || `Pharmacy #${key.slice(-6)}`,
           status: fallback?.status || 'unknown',
+          statusReason: fallback?.statusReason || '',
           createdAt: fallback?.createdAt,
           orders: 0,
           revenue: 0,

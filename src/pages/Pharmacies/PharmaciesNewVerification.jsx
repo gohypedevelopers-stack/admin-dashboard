@@ -4,6 +4,9 @@ import { Clock3, Eye, PauseCircle, ShieldCheck, Store } from 'lucide-react';
 import '../../styles/admin-panel.css';
 import { usePharmacyAdminData } from '../../hooks/usePharmacyAdminData';
 
+const promptStatusReason = (status) =>
+  window.prompt(`Add a reason for setting this pharmacy to ${status} (optional):`, '') ?? '';
+
 const PharmaciesNewVerification = () => {
   const navigate = useNavigate();
   const { loading, error, actionLoading, updateStatus, analytics } = usePharmacyAdminData();
@@ -81,7 +84,9 @@ const PharmaciesNewVerification = () => {
                         </button>
                         <button
                           className="admin-action-button success"
-                          onClick={() => updateStatus(item.pharmacyId, 'active')}
+                          onClick={() =>
+                            updateStatus(item.pharmacyId, 'active', promptStatusReason('active'))
+                          }
                           disabled={actionLoading === item.pharmacyId}
                         >
                           <ShieldCheck size={16} />
@@ -89,7 +94,9 @@ const PharmaciesNewVerification = () => {
                         </button>
                         <button
                           className="admin-action-button danger"
-                          onClick={() => updateStatus(item.pharmacyId, 'suspended')}
+                          onClick={() =>
+                            updateStatus(item.pharmacyId, 'suspended', promptStatusReason('suspended'))
+                          }
                           disabled={actionLoading === item.pharmacyId}
                         >
                           <PauseCircle size={16} />

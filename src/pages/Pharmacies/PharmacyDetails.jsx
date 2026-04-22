@@ -1,21 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
-  MapPin,
-  Phone,
-  Mail,
-  FileText,
-  Calendar,
-  Package,
-  ShoppingBag,
-  Banknote,
-  Store,
-  ShieldCheck,
-  PauseCircle,
-  Clock3,
-  Pill,
   AlertTriangle,
+  ArrowLeft,
+  Banknote,
+  Calendar,
+  Clock3,
+  FileText,
+  Mail,
+  MapPin,
+  Package,
+  PauseCircle,
+  Phone,
+  Pill,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
   Wallet,
 } from 'lucide-react';
 import { apiRequest } from '../../utils/api';
@@ -28,7 +28,20 @@ const resolveImageUrl = (image) => {
   return image.url || image.path || null;
 };
 
-const formatCurrency = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+const promptStatusReason = (status) =>
+  window.prompt(`Add a reason for setting this pharmacy to ${status} (optional):`, '') ?? '';
+
+const formatCurrency = (value) => `Rs ${Number(value || 0).toLocaleString('en-IN')}`;
+
+const renderDocumentLink = (document) => {
+  const url = resolveImageUrl(document);
+  if (!url) return 'Not uploaded';
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      Open document
+    </a>
+  );
+};
 
 const PharmacyDetails = () => {
   const { pharmacyId } = useParams();
@@ -42,14 +55,15 @@ const PharmacyDetails = () => {
   const fetchDetails = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await apiRequest(`/api/admin/pharmacies/${pharmacyId}`);
       if (response.success) {
         setData(response.data);
       } else {
-        setError(response.message);
+        setError(response.message || 'Unable to load pharmacy details');
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Unable to load pharmacy details');
     } finally {
       setLoading(false);
     }
@@ -62,17 +76,15 @@ const PharmacyDetails = () => {
   const updateStatus = async (status) => {
     try {
       setStatusUpdating(true);
+      const reason = promptStatusReason(status);
       const response = await apiRequest(`/api/admin/pharmacies/${pharmacyId}/status`, {
         method: 'PATCH',
-        body: { status },
+        body: { status, reason },
       });
       if (response.success) {
         setData((prev) => ({
           ...prev,
-          pharmacy: {
-            ...prev.pharmacy,
-            status,
-          },
+          pharmacy: response.data,
         }));
       }
     } catch (err) {
@@ -119,44 +131,70 @@ const PharmacyDetails = () => {
   if (!data) return <div className="page-error">No data found</div>;
 
   const { pharmacy, products, orders, stats } = data;
+  const statusHistory = (pharmacy.statusHistory || []).slice().reverse();
 
   return (
     <div className="admin-panel-page pharmacy-details-page">
       <div className="admin-panel-hero details-header" style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <button className="admin-action-button secondary" style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/pharmacies')}>
+          <button
+            className="admin-action-button secondary"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => navigate('/pharmacies')}
+          >
             <ArrowLeft size={16} />
             Back to Pharmacies
           </button>
+
           <div className="header-content">
             <div className="header-icon">
               <Store size={32} />
             </div>
             <div>
               <div className="admin-panel-kicker">Pharmacy Command Center</div>
-              <h1 className="admin-panel-title" style={{ marginTop: 0 }}>{pharmacy.storeName}</h1>
+              <h1 className="admin-panel-title" style={{ marginTop: 0 }}>
+                {pharmacy.storeName}
+              </h1>
               <p className="admin-panel-subtitle">
-                {pharmacy.ownerName} • {pharmacy.status?.toUpperCase()} • Joined {new Date(pharmacy.createdAt).toLocaleDateString()}
+                {pharmacy.ownerName} | {String(pharmacy.status || '').toUpperCase()} | Joined{' '}
+                {pharmacy.createdAt ? new Date(pharmacy.createdAt).toLocaleDateString('en-IN') : '-'}
               </p>
+              {pharmacy.statusReason && (
+                <p className="admin-panel-subtitle" style={{ marginTop: 4 }}>
+                  {pharmacy.statusReason}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         <div className="admin-panel-actions">
           {pharmacy.status !== 'active' && (
-            <button className="admin-action-button success" onClick={() => updateStatus('active')} disabled={statusUpdating}>
+            <button
+              className="admin-action-button success"
+              onClick={() => updateStatus('active')}
+              disabled={statusUpdating}
+            >
               <ShieldCheck size={16} />
               Approve
             </button>
           )}
           {pharmacy.status !== 'suspended' && (
-            <button className="admin-action-button danger" onClick={() => updateStatus('suspended')} disabled={statusUpdating}>
+            <button
+              className="admin-action-button danger"
+              onClick={() => updateStatus('suspended')}
+              disabled={statusUpdating}
+            >
               <PauseCircle size={16} />
               Suspend
             </button>
           )}
           {pharmacy.status !== 'pending' && (
-            <button className="admin-action-button secondary" onClick={() => updateStatus('pending')} disabled={statusUpdating}>
+            <button
+              className="admin-action-button secondary"
+              onClick={() => updateStatus('pending')}
+              disabled={statusUpdating}
+            >
               <Clock3 size={16} />
               Set Pending
             </button>
@@ -225,7 +263,11 @@ const PharmacyDetails = () => {
             <Calendar size={16} />
             <div className="column">
               <span className="label">License Expiry</span>
-              <span className="value">{pharmacy.licenseExpiryDate ? new Date(pharmacy.licenseExpiryDate).toLocaleDateString() : 'N/A'}</span>
+              <span className="value">
+                {pharmacy.licenseExpiryDate
+                  ? new Date(pharmacy.licenseExpiryDate).toLocaleDateString('en-IN')
+                  : 'N/A'}
+              </span>
             </div>
           </div>
           <div className="info-item">
@@ -238,6 +280,28 @@ const PharmacyDetails = () => {
             <div className="column">
               <span className="label">PAN Number</span>
               <span className="value">{pharmacy.panNumber || 'N/A'}</span>
+            </div>
+          </div>
+
+          <div className="divider"></div>
+
+          <h3>Verification Documents</h3>
+          <div className="info-item">
+            <div className="column">
+              <span className="label">Drug License Document</span>
+              <span className="value">{renderDocumentLink(pharmacy.verificationDocuments?.drugLicenseDocument)}</span>
+            </div>
+          </div>
+          <div className="info-item">
+            <div className="column">
+              <span className="label">GST Document</span>
+              <span className="value">{renderDocumentLink(pharmacy.verificationDocuments?.gstDocument)}</span>
+            </div>
+          </div>
+          <div className="info-item">
+            <div className="column">
+              <span className="label">PAN Document</span>
+              <span className="value">{renderDocumentLink(pharmacy.verificationDocuments?.panDocument)}</span>
             </div>
           </div>
 
@@ -323,6 +387,25 @@ const PharmacyDetails = () => {
                   <span className="admin-info-label">Inventory Risk</span>
                   <div className="admin-info-value">{analytics.lowStock} low stock items</div>
                 </div>
+                <div className="admin-info-card">
+                  <span className="admin-info-label">Latest Admin Note</span>
+                  <div className="admin-info-value">{pharmacy.statusReason || 'No admin note added yet.'}</div>
+                </div>
+                <div className="admin-info-card" style={{ gridColumn: '1 / -1' }}>
+                  <span className="admin-info-label">Status History</span>
+                  <div className="admin-info-value">
+                    {statusHistory.length === 0
+                      ? 'No status updates yet.'
+                      : statusHistory
+                          .map((entry) => {
+                            const dateLabel = entry.changedAt
+                              ? new Date(entry.changedAt).toLocaleString('en-IN')
+                              : 'Time not available';
+                            return `${String(entry.toStatus || '').toUpperCase()}${entry.reason ? ` - ${entry.reason}` : ''} (${dateLabel})`;
+                          })
+                          .join(' | ')}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -338,21 +421,27 @@ const PharmacyDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((p) => (
-                    <tr key={p._id}>
+                  {products.map((product) => (
+                    <tr key={product._id}>
                       <td>
                         <div className="product-cell-sm">
-                          {resolveImageUrl(p.images?.[0]) && <img src={resolveImageUrl(p.images?.[0])} alt="" className="thumb" />}
-                          <span>{p.name}</span>
+                          {resolveImageUrl(product.images?.[0]) && (
+                            <img src={resolveImageUrl(product.images?.[0])} alt="" className="thumb" />
+                          )}
+                          <span>{product.name}</span>
                         </div>
                       </td>
-                      <td>{p.category}</td>
-                      <td>{formatCurrency(p.price || p.mrp)}</td>
-                      <td style={{ color: p.stock < 10 ? 'red' : 'inherit' }}>{p.stock}</td>
-                      <td>{p.isDeleted ? 'Deleted' : p.status || 'Active'}</td>
+                      <td>{product.category}</td>
+                      <td>{formatCurrency(product.price || product.mrp)}</td>
+                      <td style={{ color: product.stock < 10 ? 'red' : 'inherit' }}>{product.stock}</td>
+                      <td>{product.isDeleted ? 'Deleted' : product.status || 'Active'}</td>
                     </tr>
                   ))}
-                  {products.length === 0 && <tr><td colSpan="5">No products found</td></tr>}
+                  {products.length === 0 && (
+                    <tr>
+                      <td colSpan="5">No products found</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             )}
@@ -370,22 +459,28 @@ const PharmacyDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((o) => (
-                    <tr key={o._id}>
-                      <td className="mono">#{o._id.slice(-6)}</td>
+                  {orders.map((order) => (
+                    <tr key={order._id}>
+                      <td className="mono">#{order._id.slice(-6)}</td>
                       <td>
                         <div className="column">
-                          <span>{o.shippingAddress?.fullName || 'Unknown'}</span>
-                          <span className="sub-text">{o.user?.email}</span>
+                          <span>{order.shippingAddress?.fullName || 'Unknown'}</span>
+                          <span className="sub-text">{order.user?.email}</span>
                         </div>
                       </td>
-                      <td>{formatCurrency(o.total)}</td>
-                      <td>{o.paymentStatus || 'pending'}</td>
-                      <td><span className={`status-pill ${o.status}`}>{o.status}</span></td>
-                      <td>{new Date(o.createdAt).toLocaleDateString()}</td>
+                      <td>{formatCurrency(order.total)}</td>
+                      <td>{order.paymentStatus || 'pending'}</td>
+                      <td>
+                        <span className={`status-pill ${order.status}`}>{order.status}</span>
+                      </td>
+                      <td>{new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
                     </tr>
                   ))}
-                  {orders.length === 0 && <tr><td colSpan="6">No orders found</td></tr>}
+                  {orders.length === 0 && (
+                    <tr>
+                      <td colSpan="6">No orders found</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             )}

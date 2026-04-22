@@ -9,6 +9,9 @@ const statusMeta = {
   suspended: { label: 'Suspended', icon: PauseCircle, tone: 'danger' },
 };
 
+const promptStatusReason = (status) =>
+  window.prompt(`Add a reason for setting this pharmacy to ${status} (optional):`, '') ?? '';
+
 const PharmaciesStatus = () => {
   const { loading, error, analytics, actionLoading, updateStatus } = usePharmacyAdminData();
 
@@ -82,7 +85,9 @@ const PharmaciesStatus = () => {
                         {item.status !== 'active' && (
                           <button
                             className="admin-action-button success"
-                            onClick={() => updateStatus(item.pharmacyId, 'active')}
+                            onClick={() =>
+                              updateStatus(item.pharmacyId, 'active', promptStatusReason('active'))
+                            }
                             disabled={actionLoading === item.pharmacyId}
                           >
                             <ShieldCheck size={16} />
@@ -92,7 +97,9 @@ const PharmaciesStatus = () => {
                         {item.status !== 'pending' && (
                           <button
                             className="admin-action-button secondary"
-                            onClick={() => updateStatus(item.pharmacyId, 'pending')}
+                            onClick={() =>
+                              updateStatus(item.pharmacyId, 'pending', promptStatusReason('pending'))
+                            }
                             disabled={actionLoading === item.pharmacyId}
                           >
                             <Clock3 size={16} />
@@ -102,7 +109,9 @@ const PharmaciesStatus = () => {
                         {item.status !== 'suspended' && (
                           <button
                             className="admin-action-button danger"
-                            onClick={() => updateStatus(item.pharmacyId, 'suspended')}
+                            onClick={() =>
+                              updateStatus(item.pharmacyId, 'suspended', promptStatusReason('suspended'))
+                            }
                             disabled={actionLoading === item.pharmacyId}
                           >
                             <PauseCircle size={16} />

@@ -35,13 +35,18 @@ const PharmaciesPage = () => {
 
   const updateStatus = async (pharmacyId, status) => {
     try {
+      const reason = window.prompt(`Add a reason for setting this pharmacy to ${status} (optional):`, '') ?? '';
       setActionLoading(pharmacyId);
       await apiRequest(`/api/admin/pharmacies/${pharmacyId}/status`, {
         method: 'PATCH',
-        body: { status },
+        body: { status, reason },
       });
       setPharmacies((prev) =>
-        prev.map((item) => (item._id === pharmacyId ? { ...item, status } : item))
+        prev.map((item) =>
+          item._id === pharmacyId
+            ? { ...item, status, statusReason: reason || item.statusReason }
+            : item
+        )
       );
     } catch (err) {
       alert(err.message || 'Unable to update pharmacy status');
@@ -151,11 +156,16 @@ const PharmaciesPage = () => {
                         <div className="product-image-placeholder" style={{ background: '#e0f2fe', color: '#0369a1' }}>
                           <Store size={20} />
                         </div>
-                        <div className="product-info">
-                          <span className="product-name">{item.storeName}</span>
-                          <span className="product-category">Owner: {item.ownerName}</span>
-                          <span className="product-category" style={{ fontSize: '0.75rem', color: '#64748b' }}>License: {item.drugLicenseNumber}</span>
-                        </div>
+                         <div className="product-info">
+                           <span className="product-name">{item.storeName}</span>
+                           <span className="product-category">Owner: {item.ownerName}</span>
+                           <span className="product-category" style={{ fontSize: '0.75rem', color: '#64748b' }}>License: {item.drugLicenseNumber}</span>
+                           {item.statusReason && (
+                             <span className="product-category" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                               Note: {item.statusReason}
+                             </span>
+                           )}
+                         </div>
                       </div>
                     </td>
                     <td>
