@@ -1,9 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Filter, MoreVertical, Trash2, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, MoreVertical, Trash2, Shield, UserCheck, Eye, BadgeCheck, X } from 'lucide-react';
 import './users-page.css';
 import { getAdminToken } from '../../utils/api';
 import { userService } from '../../services/userService';
+
+const ROLE_OPTIONS = [
+  { value: 'user', label: 'Patient / User' },
+  { value: 'doctor', label: 'Doctor' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'pharmacy', label: 'Pharmacy' },
+  { value: 'nurse', label: 'Nurse' },
+];
 
 const UsersPage = ({ fixedRole }) => {
   const location = useLocation();
@@ -30,6 +38,11 @@ const UsersPage = ({ fixedRole }) => {
 
   // Action States
   const [actionLoading, setActionLoading] = useState(false);
+  const [openActionMenu, setOpenActionMenu] = useState('');
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+  const [roleModalUser, setRoleModalUser] = useState(null);
+  const [roleValue, setRoleValue] = useState('user');
 
   useEffect(() => {
     let active = true;
@@ -132,6 +145,57 @@ const UsersPage = ({ fixedRole }) => {
       setReloadTrigger(prev => prev + 1);
     } catch (err) {
       alert('Failed to delete user');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleUserStatus = async (user) => {
+    const nextIsActive = !user.isActive;
+    const actionLabel = nextIsActive ? 'activate' : 'suspend';
+
+    if (!window.confirm(`Are you sure you want to ${actionLabel} this user?`)) return;
+
+    setActionLoading(true);
+    setOpenActionMenu('');
+    try {
+      await userService.updateUserStatus(user.id, nextIsActive);
+      setReloadTrigger(prev => prev + 1);
+    } catch (err) {
+      alert(err?.message || `Failed to ${actionLabel} user`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewUser = async (userId) => {
+    setOpenActionMenu('');
+    setDetailsLoading(true);
+    try {
+      const payload = await userService.getUserById(userId);
+      setSelectedUserDetails(payload?.data || null);
+    } catch (err) {
+      alert(err?.message || 'Failed to load user details');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleOpenRoleModal = (user) => {
+    setOpenActionMenu('');
+    setRoleModalUser(user);
+    setRoleValue(user.role || 'user');
+  };
+
+  const handleUpdateRole = async () => {
+    if (!roleModalUser) return;
+    setActionLoading(true);
+    try {
+      await userService.updateUserRole(roleModalUser.id, roleValue);
+      setRoleModalUser(null);
+      setReloadTrigger(prev => prev + 1);
+    } catch (err) {
+      alert(err?.message || 'Failed to update user role');
     } finally {
       setActionLoading(false);
     }
@@ -253,14 +317,98 @@ const UsersPage = ({ fixedRole }) => {
                     </td>
                     <td>{user.joined}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button
-                        className="action-btn delete"
-                        title="Delete User"
-                        onClick={() => handleDeleteSingle(user.id)}
-                        disabled={actionLoading}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <button
+                          className="action-btn"
+                          title="User Actions"
+                          onClick={() =>
+                            setOpenActionMenu((current) => (current === user.id ? '' : user.id))
+                          }
+                          disabled={actionLoading}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+
+                        {openActionMenu === user.id && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: 'calc(100% + 8px)',
+                              minWidth: 170,
+                              background: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 12,
+                              boxShadow: '0 16px 40px rgba(15, 23, 42, 0.12)',
+                              padding: 8,
+                              zIndex: 10,
+                              display: 'grid',
+                              gap: 6,
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="action-btn"
+                              style={{
+                                width: '100%',
+                                justifyContent: 'flex-start',
+                                gap: 8,
+                                padding: '10px 12px',
+                              }}
+                              onClick={() => handleViewUser(user.id)}
+                              disabled={actionLoading || detailsLoading}
+                            >
+                              <Eye size={16} />
+                              View Details
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn"
+                              style={{
+                                width: '100%',
+                                justifyContent: 'flex-start',
+                                gap: 8,
+                                padding: '10px 12px',
+                              }}
+                              onClick={() => handleOpenRoleModal(user)}
+                              disabled={actionLoading}
+                            >
+                              <BadgeCheck size={16} />
+                              Change Role
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn"
+                              style={{
+                                width: '100%',
+                                justifyContent: 'flex-start',
+                                gap: 8,
+                                padding: '10px 12px',
+                              }}
+                              onClick={() => handleToggleUserStatus(user)}
+                              disabled={actionLoading}
+                            >
+                              {user.isActive ? <Shield size={16} /> : <UserCheck size={16} />}
+                              {user.isActive ? 'Suspend User' : 'Activate User'}
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn delete"
+                              style={{
+                                width: '100%',
+                                justifyContent: 'flex-start',
+                                gap: 8,
+                                padding: '10px 12px',
+                              }}
+                              onClick={() => handleDeleteSingle(user.id)}
+                              disabled={actionLoading}
+                            >
+                              <Trash2 size={16} />
+                              Delete User
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -293,6 +441,119 @@ const UsersPage = ({ fixedRole }) => {
           </div>
         )}
       </div>
+
+      {selectedUserDetails && (
+        <div className="modal-overlay" onClick={() => setSelectedUserDetails(null)}>
+          <div className="modal-content" style={{ maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title">User Details</h2>
+                <p className="modal-subtitle">Complete information for the selected user</p>
+              </div>
+              <button className="close-btn" onClick={() => setSelectedUserDetails(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'grid', gap: 16 }}>
+              <div className="user-cell">
+                <div className="user-avatar" style={{ width: 56, height: 56 }}>
+                  {selectedUserDetails.avatarUrl ? (
+                    <img
+                      src={selectedUserDetails.avatarUrl}
+                      alt={selectedUserDetails.userName || 'User'}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                    />
+                  ) : (
+                    getInitials(selectedUserDetails.userName || 'User')
+                  )}
+                </div>
+                <div className="user-info">
+                  <span className="user-name">{selectedUserDetails.userName || 'Unknown User'}</span>
+                  <span className="user-email">{selectedUserDetails.email || '-'}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Role</strong>
+                  <div style={{ marginTop: 6, textTransform: 'capitalize' }}>{selectedUserDetails.role || '-'}</div>
+                </div>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Status</strong>
+                  <div style={{ marginTop: 6 }}>
+                    <span className={`status-badge status-${selectedUserDetails.isActive === false ? 'suspended' : 'active'}`}>
+                      {selectedUserDetails.isActive === false ? 'Suspended' : 'Active'}
+                    </span>
+                  </div>
+                </div>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Phone</strong>
+                  <div style={{ marginTop: 6 }}>{selectedUserDetails.phoneNumber || '-'}</div>
+                </div>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Gender</strong>
+                  <div style={{ marginTop: 6 }}>{selectedUserDetails.gender || '-'}</div>
+                </div>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Date of Birth</strong>
+                  <div style={{ marginTop: 6 }}>
+                    {selectedUserDetails.dateOfBirth ? new Date(selectedUserDetails.dateOfBirth).toLocaleDateString() : '-'}
+                  </div>
+                </div>
+                <div className="table-container" style={{ padding: 14 }}>
+                  <strong>Joined</strong>
+                  <div style={{ marginTop: 6 }}>
+                    {selectedUserDetails.createdAt ? new Date(selectedUserDetails.createdAt).toLocaleString() : '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-close" onClick={() => setSelectedUserDetails(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {roleModalUser && (
+        <div className="modal-overlay" onClick={() => setRoleModalUser(null)}>
+          <div className="modal-content" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title">Change User Role</h2>
+                <p className="modal-subtitle">{roleModalUser.name}</p>
+              </div>
+              <button className="close-btn" onClick={() => setRoleModalUser(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'grid', gap: 12 }}>
+              <label style={{ display: 'grid', gap: 8 }}>
+                <span style={{ fontWeight: 600 }}>Select new role</span>
+                <select
+                  className="filter-select"
+                  value={roleValue}
+                  onChange={(e) => setRoleValue(e.target.value)}
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setRoleModalUser(null)} disabled={actionLoading}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleUpdateRole} disabled={actionLoading}>
+                {actionLoading ? 'Saving...' : 'Update Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

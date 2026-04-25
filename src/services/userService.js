@@ -16,6 +16,13 @@ export const userService = {
         });
     },
 
+    updateUserStatus: async (userId, isActive) => {
+        return apiRequest(`/api/admin/users/${userId}/status`, {
+            method: 'PATCH',
+            body: { isActive },
+        });
+    },
+
     deleteUser: async (userId) => {
         return apiRequest(`/api/admin/users/${userId}`, {
             method: 'DELETE',
