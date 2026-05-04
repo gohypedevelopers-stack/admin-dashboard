@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, Clock, User, Stethoscope, MapPin } from 'lucide-react';
+import { X, Calendar, Clock, User, Stethoscope, MapPin, KeyRound } from 'lucide-react';
 import '../../pages/Appointments/appointments-page.css';
 
 const AppointmentDetailsModal = ({ isOpen, onClose, appointment }) => {
@@ -64,6 +64,11 @@ const AppointmentDetailsModal = ({ isOpen, onClose, appointment }) => {
                         <span className={`status-badge status-${(appointment.status || 'pending').toLowerCase()}`}>
                             {appointment.status || 'Pending'}
                         </span>
+                    </div>
+
+                    <div className="detail-row">
+                        <span className="detail-label"><KeyRound size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} /> Request OTP</span>
+                        <span className="detail-value">{appointment.requestOtp || '-'}</span>
                     </div>
 
                     <div className="detail-row">

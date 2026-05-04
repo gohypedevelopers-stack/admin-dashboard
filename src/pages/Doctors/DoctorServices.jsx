@@ -16,6 +16,9 @@ const createEmptyService = (index = 0) => ({
   fullDetailsTitle: 'Full Service Details',
   fullDetails: '',
   detailsCtaText: 'View Full Service Details',
+  showWhatsIncludedSection: true,
+  showSubCategoriesSection: true,
+  showAvailableSpecialistsSection: true,
   availableSpecialistsTitle: 'Available Specialists',
   subCategoriesTitle: 'Service Categories',
   subCategories: [
@@ -557,6 +560,18 @@ const DoctorServices = () => {
               </div>
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: 999 }}>
+                  <input type="checkbox" checked={service.showWhatsIncludedSection} onChange={(e) => updateService(index, 'showWhatsIncludedSection', e.target.checked)} />
+                  Show What's Included
+                </label>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: 999 }}>
+                  <input type="checkbox" checked={service.showSubCategoriesSection} onChange={(e) => updateService(index, 'showSubCategoriesSection', e.target.checked)} />
+                  Show Categories
+                </label>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: 999 }}>
+                  <input type="checkbox" checked={service.showAvailableSpecialistsSection} onChange={(e) => updateService(index, 'showAvailableSpecialistsSection', e.target.checked)} />
+                  Show Specialists
+                </label>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: 999 }}>
                   <input type="checkbox" checked={service.showOnHome} onChange={(e) => updateService(index, 'showOnHome', e.target.checked)} />
                   Show on home section

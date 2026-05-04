@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Eye, Calendar, Clock, Stethoscope, UserRound, CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { Search, Eye, Calendar, Clock, Stethoscope, UserRound, CheckCircle2, ClipboardCheck, KeyRound } from 'lucide-react';
 import { useApiData } from '../../hooks/useApiData';
 import { appointmentService } from '../../services/appointmentService';
 import AppointmentDetailsModal from '../../components/Appointments/AppointmentDetailsModal';
@@ -121,6 +121,7 @@ const AppointmentList = () => {
                 <th>Doctor</th>
                 <th>Patient</th>
                 <th>Date & Time</th>
+                <th>OTP</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -128,7 +129,7 @@ const AppointmentList = () => {
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="admin-panel-empty empty-state">No appointments found.</td>
+                  <td colSpan="6" className="admin-panel-empty empty-state">No appointments found.</td>
                 </tr>
               ) : (
                 filteredData.map((appt) => (
@@ -169,6 +170,12 @@ const AppointmentList = () => {
                           <Clock size={14} /> {formatTime(appt.startTime)}
                         </span>
                       </div>
+                    </td>
+                    <td>
+                      <span className="admin-panel-chip">
+                        <KeyRound size={14} />
+                        {appt.requestOtp || '-'}
+                      </span>
                     </td>
                     <td>
                       <span className={`status-badge status-${(appt.status || 'pending').toLowerCase()}`}>

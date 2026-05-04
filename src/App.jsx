@@ -41,6 +41,7 @@ import AdminSignIn from './pages/Auth/AdminSignIn';
 import SettingsPage from './pages/Settings/SettingsPage';
 import SupportPage from './pages/Support/SupportPage';
 import GiveServiceList from './pages/GiveService/GiveServiceList';
+import ServiceRequestsPage from './pages/ServiceRequests/ServiceRequestsPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -97,6 +98,7 @@ const AppLayout = () => {
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
           <Route path="/give-service" element={<ProtectedRoute><GiveServiceList /></ProtectedRoute>} />
+          <Route path="/service-requests" element={<ProtectedRoute><ServiceRequestsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/admin-signin'} replace />} />
         </Routes>
       </main>
