@@ -11,6 +11,7 @@ const createEmptyService = (index = 0) => ({
   bannerImage: '',
   rating: 0,
   reviewsCount: 0,
+  servicePrice: 0,
   whatsIncludedTitle: "What's Included",
   whatsIncluded: [''],
   fullDetailsTitle: 'Full Service Details',
@@ -50,6 +51,7 @@ const normalizePayload = (payload) => ({
     ? payload.services.map((service, index) => ({
         ...createEmptyService(index),
         ...service,
+        servicePrice: Number(service?.servicePrice) || 0,
         whatsIncluded:
           Array.isArray(service?.whatsIncluded) && service.whatsIncluded.length > 0
             ? service.whatsIncluded
@@ -249,6 +251,7 @@ const DoctorServices = () => {
           displayOrder: Number(service.displayOrder) || index,
           rating: Number(service.rating) || 0,
           reviewsCount: Number(service.reviewsCount) || 0,
+          servicePrice: Math.max(Number(service.servicePrice) || 0, 0),
           whatsIncluded: service.whatsIncluded
             .map((item) => item.trim())
             .filter(Boolean),
@@ -442,6 +445,10 @@ const DoctorServices = () => {
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Reviews count</span>
                   <input className="search-input" type="number" value={service.reviewsCount} onChange={(e) => updateService(index, 'reviewsCount', e.target.value)} />
+                </label>
+                <label style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Service price (INR)</span>
+                  <input className="search-input" type="number" min="0" value={service.servicePrice} onChange={(e) => updateService(index, 'servicePrice', e.target.value)} />
                 </label>
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Display order</span>
